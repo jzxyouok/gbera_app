@@ -1,11 +1,9 @@
 //以下主页应放到主程序中实现并向framework注册s
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:gbera_framework/display.dart';
 
-@Display("xxxx")
-class GberaHomePage extends StatefulWidget {
-  GberaHomePage({Key key, this.title}) : super(key: key);
+class GberaHomeDisplay extends StatefulWidget {
+  GberaHomeDisplay({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -19,10 +17,10 @@ class GberaHomePage extends StatefulWidget {
   final String title; //应用的标题，不是android任务栏状态时的标题
 
   @override
-  _GberaHomePageState createState() => _GberaHomePageState();
+  _GberaHomeDisplayState createState() => _GberaHomeDisplayState();
 }
 
-class _GberaHomePageState extends State<GberaHomePage> {
+class _GberaHomeDisplayState extends State<GberaHomeDisplay> {
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gbera_framework/framework.dart';
 import 'package:yaml/yaml.dart';
@@ -19,6 +18,11 @@ class NetosApp extends StatefulWidget {
 }
 
 class _NetosAppState extends State<NetosApp> {
+  /* 你看，它能支持全路径写法
+  {
+        "gbera://index.page": (context) => GberaHomePage(title: '金证时代'),
+      },
+   */
   @override
   Widget build(BuildContext context) {
     final framework = Framework.getFramework();
@@ -35,11 +39,11 @@ class _NetosAppState extends State<NetosApp> {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: widget.welcome, //初始化是官方主页地址
-      routes: {
-        "gbera://index.page": (context) => GberaHomePage(title: '金证时代'),
-      },
-
+      initialRoute: widget.welcome,
+      //初始化是官方主页地址
+      routes: framework.onOfficialMicroappRouters(context,widget.welcome),
+      onGenerateRoute: framework.onUnofficialMicroappRouters,
+      onUnknownRoute: framework.onUnknownRoute,
       //      onGenerateRoute: ,//在找不到路由时响应
 //    onUnknownRoute: ,//未知路由，调用顺序为onGenerateRoute ==> onUnknownRoute
 //    navigatorObservers: ,//导航观擦

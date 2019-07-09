@@ -1,43 +1,5 @@
 library themes;
 
-import 'Path.dart';
-
-class MicroThemeFactory {
-  static Map<String, MicroTheme> _themes;
-
-  MicroThemeFactory() {
-    _themes = Map();
-  }
-
-  static MicroTheme get(String theme) {
-    return _themes[theme];
-  }
-
-  static bool containsTheme(String theme) {
-    return _themes.containsKey(theme);
-  }
-
-  static int count() {
-    return _themes.length;
-  }
-
-  static void addTheme(MicroTheme theme) {
-    if (containsTheme(theme.theme)) {
-      throw '已存在异常：${theme.theme}';
-    }
-    _themes[theme.theme] = theme;
-  }
-
-  static void removeTheme(String theme) {
-    _themes.remove(theme);
-  }
-
-  static Iterable<String> enumTheme() {
-    return _themes.keys;
-  }
-
-
-}
 
 class MicroTheme {
   final String theme;

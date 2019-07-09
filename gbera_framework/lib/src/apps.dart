@@ -1,44 +1,11 @@
 library microapps;
 
 import 'package:flutter/foundation.dart';
-import 'Path.dart';
 
-class MicroAppFactory {
-  static Map<String, MicroApp> _microapps;
-
-  MicroAppFactory() {
-    _microapps = Map();
-  }
-
-  static MicroApp getApp(String app) => _microapps[app];
-
-  static bool containsApp(String app) => _microapps.containsKey(app);
-
-  static void removeApp(String app) => _microapps.remove(app);
-
-  static Iterable<String> enumApp() => _microapps.keys;
-
-  static int count() => _microapps.length;
-}
-
-class _PathNode {
-  _PathNode(this.folderCode, this.folderName)
-      : assert(folderCode == null),
-        assert(folderName == null) {
-    _children = Map();
-  }
-
-  String folderCode;
-  String folderName;
-  Map<String, _PathNode> _children;
-
-  Map<String, _PathNode> get children => _children;
-}
 
 class MicroApp {
   final MicroSite site;
   final String version;
-  _PathNode _root;
 
   ///主题路径
   final String theme;
@@ -47,7 +14,6 @@ class MicroApp {
       : assert(site == null),
         assert(version == null),
         assert(theme == null) {
-    _root = _PathNode("/", rootFolderName);
   }
 
   void mkdir(String path, String folderCode, String folderName) {}
