@@ -54,7 +54,14 @@ class _GberaHomeDisplayState extends State<GberaHomeDisplay> {
           // axis because Columns are vertical (the cross axis would be
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[],
+          children: <Widget>[
+            FlatButton(
+              child: Text("...."),
+              onPressed: (){
+                Navigator.pushNamed(context, 'gbera://dir1/dir2/page2.page');
+              },
+            ),
+          ],
         ),
       ),
     );

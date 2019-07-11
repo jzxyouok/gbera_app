@@ -18,6 +18,11 @@ class NetosApp extends StatefulWidget {
 }
 
 class _NetosAppState extends State<NetosApp> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
   /* 你看，它能支持全路径写法
   {
         "gbera://index.page": (context) => GberaHomePage(title: '金证时代'),
