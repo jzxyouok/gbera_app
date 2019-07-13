@@ -17,7 +17,7 @@ void main() {
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
 
-  framework.remote_updater = 'http://localhost:7800/microapp/updateManager.service';
+  framework.remote_updater = 'http://192.168.1.6:7800/microapp/updateManager.service';
 
   runApp(NetosApp(
     taskbarTitle: 'gbera',

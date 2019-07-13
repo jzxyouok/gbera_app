@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   yaml: ^2.1.16
   dio: 2.1.12
+  path_provider: ^1.1.2
 
 dev_dependencies:
   flutter_test:

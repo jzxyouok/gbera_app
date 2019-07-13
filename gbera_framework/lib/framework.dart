@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gbera_framework/src/util.dart';
+import 'src/error_page.dart';
 import 'src/i_service.dart';
 import 'package:gbera_framework/src/updater_manager.dart';
 import 'src/theme_cacher.dart';
@@ -132,7 +133,10 @@ class Framework implements IServiceProvider {
           builder: (context, snapshot) {
             switch (snapshot.connectionState) {
               case ConnectionState.done:
-              //如果出错则显示错误页
+                //如果出错则显示错误页
+                if (snapshot.hasError) {
+                  return DefaultErrorPage(snapshot.error);
+                }
                 Map<String, Object> page = snapshot.data;
                 var displayName = page['display'];
                 String themefull = page['theme'];
@@ -140,23 +144,21 @@ class Framework implements IServiceProvider {
                 return display;
               case ConnectionState.active:
               case ConnectionState.waiting:
-                //如果出错则显示错误页
                 return Scaffold(
-                  body: Container(
-                    child: Text('正在等待...'),
+                  body: Center(
+                    child: CircularProgressIndicator(),
                   ),
                 );
               case ConnectionState.none:
-              //如果出错则显示错误页
+                //如果出错则显示错误页
                 if (snapshot.hasError) {
-                  return Container(
-                    child: Text('Error: ${snapshot.error}'),
-                  );
+                  return DefaultErrorPage(snapshot.error);
                 }
                 return Container(
-                  child: Text('Result: ${snapshot.data}'),
+                  child: Text('${snapshot.data}'),
                 );
             }
+            return null;
           },
         );
       },
@@ -179,10 +181,15 @@ class Framework implements IServiceProvider {
     await _updater.getMicroApp(microapp, onsuccess: (app) {
       _app = app;
     });
-
+    if (_app == null) {
+      throw '404 Not Microapp Found.';
+    }
     MicroAppParser parser = MicroAppParser(_app);
     //查显示器
     Map<String, Object> page = parser.getPage(path);
+    if (page == null) {
+      throw '404 Not Page Found.';
+    }
     page['theme'] = _app['theme'];
     return page;
   }

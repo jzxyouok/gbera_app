@@ -1,18 +1,23 @@
+import 'dart:io';
+
+import 'app_cacher.dart';
 import 'i_service.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 
 class UpdateManager implements IUpdateManager {
   IServiceProvider site;
-  Map<String, Map<String,Object>> _appCacher;//key是app名，为什么不用appname/version呢，是因为缓冲器仅缓冲当前使用的一个版本
-
+  IAppLocalCacher _appLocalCacher;
   UpdateManager(this.site) {
-    _appCacher = Map();
+    _appLocalCacher=MicroappCacher();
+    _appLocalCacher.init();
   }
 
   @override
   getMicroApp(String microapp, {onsuccess, onerror}) async {
-    dynamic app=_appCacher[microapp];
+
+    dynamic app=_appLocalCacher.getApp(microapp);
+
     if(app!=null&&onsuccess!=null){
       onsuccess(app);
       return ;
@@ -31,7 +36,8 @@ class UpdateManager implements IUpdateManager {
       );
       String text=response.data.toString();
       app=json.decode(text);
-      _appCacher[app['name']]=app;
+
+      _appLocalCacher.putApp(app);
       if (onsuccess != null) {
         onsuccess(app);
       }
