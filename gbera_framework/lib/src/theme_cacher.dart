@@ -4,7 +4,7 @@ import '../framework.dart';
 import 'i_service.dart';
 
 mixin IThemeCacher {
-  getDisplay(String themefull, String displayName) {}
+  getDisplay(DisplayContext context) {}
 
   void cacheBinder(String theme, displays) {}
 }
@@ -20,7 +20,9 @@ class ThemeCacher implements IThemeCacher {
   }
 
   @override
-  getDisplay(String themefull, String displayName) {
+  getDisplay(DisplayContext context) {
+    String displayName = context.page['display'];
+    String themefull = context.page['theme'];
     int pos = displayName.lastIndexOf("@");
     String dname = '';
     if (pos < 0) {
@@ -32,7 +34,7 @@ class ThemeCacher implements IThemeCacher {
     Map<String, DisplayGetter> cachedDisplayGetters = _displays[themefull];
     if (cachedDisplayGetters != null) {
       var display = cachedDisplayGetters[dname];
-      return display(themefull, displayName);
+      return display(context);
     }
     //将显器示绑定到主题
     var microTheme = null;
@@ -41,7 +43,7 @@ class ThemeCacher implements IThemeCacher {
     _displays[themefull] = displayGetters;
 
     var display = displayGetters[dname];
-    return display(themefull, displayName);
+    return display(context);
   }
 
   @override

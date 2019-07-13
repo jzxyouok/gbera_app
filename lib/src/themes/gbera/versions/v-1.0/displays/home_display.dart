@@ -1,9 +1,11 @@
 //以下主页应放到主程序中实现并向framework注册s
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:gbera_framework/framework.dart';
 
 class GberaHomeDisplay extends StatefulWidget {
-  GberaHomeDisplay({Key key, this.title}) : super(key: key);
+
+  GberaHomeDisplay({Key key, this.title,this.context}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -13,7 +15,7 @@ class GberaHomeDisplay extends StatefulWidget {
   // case the title) provided by the parent (in this case the App widget) and
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
-
+  final DisplayContext context;
   final String title; //应用的标题，不是android任务栏状态时的标题
 
   @override
@@ -56,10 +58,12 @@ class _GberaHomeDisplayState extends State<GberaHomeDisplay> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             FlatButton(
-              child: Text("...."),
+              child: Text("....${widget.context.path()}"),
               onPressed: (){
-                Navigator.pushNamed(context, 'gbera://dir1/dir2/page2.page');
+//                Navigator.pushNamed(context, 'gbera://dir1/dir2/page2.page');
+                  widget.context.forward('gbera://dir1/dir2/page2.page');
               },
+
             ),
           ],
         ),

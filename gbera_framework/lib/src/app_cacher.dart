@@ -6,30 +6,43 @@ import 'package:path_provider/path_provider.dart';
 import 'i_service.dart';
 import 'package:yaml/yaml.dart';
 
+import 'util.dart';
+
 class MicroappCacher implements IAppLocalCacher {
   String homeDir;
 
   @override
   Map<String, Object> getApp(String microapp) {
-    return null;
+    var dir = Directory("$homeDir");
+    if (!dir.existsSync()) {
+      return null;
+    }
+
+    String fn='${homeDir}/${microapp}/app.json';
+    var f=File(fn);
+    if(!f.existsSync()){
+      return null;
+    }
+    String json=f.readAsStringSync();
+    var obj= jsonDecode(json);
+    return obj;
   }
 
   //apps
   //-cctv
-  //---versions
-  //---v-1.0.json
-  //---v-1.1.json
+  //---app.json #一个应用仅保存一个在用版本
   //---data
   //-----xxx.text
   @override
   void putApp(Map<String, Object> app) {
     String json = jsonEncode(app);
-    print(json);
-    var dir = Directory("$homeDir/$app['name']");
+    var dir = Directory("$homeDir/${app['name']}");
     if (!dir.existsSync()) {
-      dir.createSync();
+      dir.createSync(recursive: true);
     }
-    File f = File('$homeDir/');
+    File f = File("${dir.path}/app.json");
+    f.openSync(mode: FileMode.write);
+    f.writeAsStringSync(json);
   }
 
   @override

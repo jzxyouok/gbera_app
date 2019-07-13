@@ -1,7 +1,10 @@
 library framework;
 
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gbera_framework/src/util.dart';
@@ -12,8 +15,7 @@ import 'src/theme_cacher.dart';
 import 'dart:async';
 
 typedef RouteElementGetter = Widget Function(BuildContext context);
-typedef DisplayGetter = Widget Function(String themefull, String displayfull);
-
+typedef DisplayGetter = Widget Function(DisplayContext context);
 typedef DisplayBinder = Map<String, DisplayGetter> Function(
   Map<String, Object> theme,
 );
@@ -24,8 +26,10 @@ class Framework implements IServiceProvider {
   static Framework _framework;
   IUpdateManager _updater;
   IThemeCacher _themeCacher;
-  String remote_updater; //远程微应用配置服务器地址
+  String remoteMicroappHost; //远程微应用配置服务器地址
   Dio dio;
+
+  BuildContext _context;
 
   Framework._() {
     _updater = UpdateManager(this);
@@ -44,12 +48,10 @@ class Framework implements IServiceProvider {
     return _framework;
   }
 
-  BuildContext _context;
-
   @override
   getService(String name) {
     if ("@remote.updater" == name) {
-      return remote_updater;
+      return '${this.remoteMicroappHost}/microapp/updateManager.service';
     }
     if ('@http' == name) {
       return dio;
@@ -71,10 +73,12 @@ class Framework implements IServiceProvider {
     _themeCacher.cacheBinder(theme, displays);
   }
 
+/*
+  ///由于异步请求无法同步获取远程路由，因此该方法在调用处已被注释掉，不会被执行
   Map<String, RouteElementGetter> onOfficialMicroappRouters(
       BuildContext context, String welcome) {
     //为了主微应用页面间切换的性能考虑，在此方法中一次性初始化官方（app启动的第一个微应用）微应用的路由表：微应用页地址->display实例
-    /*
+
     assert(!StringUtil.isEmpty(welcome));
     int pos = welcome.indexOf("://");
     dynamic microapp;
@@ -114,12 +118,11 @@ class Framework implements IServiceProvider {
       if (display != null) {
         map[path] = (context) => display;
       }
+      return true;
     });
     return map;
-*/
-    return Map();
   }
-
+*/
 //return new MaterialPageRoute(builder: builder, settings: settings);
   Route onUnofficialMicroappRouters(RouteSettings settings) {
     //如果不存在则到网上查找页，如果网上仍没有则返回null，如果网上有则检查是否有display，如果没有display则返回null
@@ -138,15 +141,27 @@ class Framework implements IServiceProvider {
                   return DefaultErrorPage(snapshot.error);
                 }
                 Map<String, Object> page = snapshot.data;
-                var displayName = page['display'];
-                String themefull = page['theme'];
-                var display = _themeCacher.getDisplay(themefull, displayName);
+
+                DisplayContext displayContext =
+                    DisplayContext(this, context, page);
+                var display = _themeCacher.getDisplay(displayContext);
                 return display;
               case ConnectionState.active:
               case ConnectionState.waiting:
                 return Scaffold(
                   body: Center(
-                    child: CircularProgressIndicator(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(0, 0, 0, 20),
+                          child:
+                              Text('${ModalRoute.of(context).settings.name}'),
+                        ),
+                        CircularProgressIndicator(),
+                      ],
+                    ),
                   ),
                 );
               case ConnectionState.none:
@@ -180,6 +195,8 @@ class Framework implements IServiceProvider {
     var _app;
     await _updater.getMicroApp(microapp, onsuccess: (app) {
       _app = app;
+    }, onerror: (e) {
+      throw '500 $e.';
     });
     if (_app == null) {
       throw '404 Not Microapp Found.';
@@ -197,6 +214,17 @@ class Framework implements IServiceProvider {
   Route onUnknownRoute(RouteSettings settings) {
     //如果页仍不存在，或者是对应的显示器不存在，则弹出404界面
     return null;
+  }
+
+  ///初始化环境
+  void initEnv({String remoteMicroappHost}) {
+    this.remoteMicroappHost = remoteMicroappHost;
+    if (Platform.isAndroid) {
+      SystemUiOverlayStyle systemUiOverlayStyle = SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+      );
+      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
+    }
   }
 }
 
@@ -227,5 +255,23 @@ class MicroAppParser {
     }
     Map<String, Object> pages = app['pages'];
     return pages[relPage];
+  }
+}
+
+class DisplayContext {
+  final BuildContext context;
+  final Map<String, Object> page;
+  final IServiceProvider site;
+
+  const DisplayContext(this.site, this.context, this.page);
+
+  String path() {
+    return ModalRoute.of(context).settings.name;
+  }
+  Object arguments(){
+    return ModalRoute.of(context).settings.arguments;
+  }
+  void forward(String pagePath, {Object arguments}) {
+    Navigator.pushNamed(context, pagePath, arguments: arguments);
   }
 }

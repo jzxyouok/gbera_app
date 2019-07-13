@@ -46,7 +46,7 @@ class _NetosAppState extends State<NetosApp> {
       ),
       initialRoute: widget.welcome,
       //初始化是官方主页地址
-      routes: framework.onOfficialMicroappRouters(context,widget.welcome),
+//      routes: framework.onOfficialMicroappRouters(context,widget.welcome),
       onGenerateRoute: framework.onUnofficialMicroappRouters,
       onUnknownRoute: framework.onUnknownRoute,
       //      onGenerateRoute: ,//在找不到路由时响应
