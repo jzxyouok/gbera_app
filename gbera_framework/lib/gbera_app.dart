@@ -6,7 +6,7 @@ class NetosApp extends StatefulWidget {
   // This widget is the root of your application.
   final String taskbarTitle;
   final String welcome; //主页路径
-  final initFramework;
+  final bindThemes;
 
   @override
   _NetosAppState createState() => _NetosAppState();
@@ -14,7 +14,7 @@ class NetosApp extends StatefulWidget {
   const NetosApp(
       {this.taskbarTitle,
       this.welcome,
-      this.initFramework(Framework framework)});
+      this.bindThemes(Framework framework)});
 }
 
 class _NetosAppState extends State<NetosApp> {
@@ -31,7 +31,7 @@ class _NetosAppState extends State<NetosApp> {
   @override
   Widget build(BuildContext context) {
     final framework = Framework.getFramework();
-    widget.initFramework(framework);
+    widget.bindThemes(framework);
     //MaterialApp是一个应用中唯一的根，切换微应用就是切换脚手架
     return MaterialApp(
 //      title： 该标题出现在 Android：任务管理器的程序快照之上；IOS: 程序切换管理器中。经测试标题仅在android上有效

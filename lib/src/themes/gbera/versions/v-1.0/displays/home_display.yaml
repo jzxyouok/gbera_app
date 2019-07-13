@@ -1,0 +1,25 @@
+methods:
+  cashBillCount:
+    command: get
+    protocol: http/1.1
+    usage: 提现单总数
+    return-type: double
+    rest-header:
+      Rest-StubFace: cj.netos.fsbank.stub.IBankAssetStub
+      Rest-Command: cashBillCount
+    parameters:
+      bank:
+        type: string
+        usage: 银行
+        #请求该方法要放到http请求头的哪里？header?parameter?content?
+        in-request: header
+
+properties:
+  com.cj.turn:
+    #值类型描述
+    value-type: string
+    usage: 事件开头
+  cj.netos.set:
+    value-type: int
+    usage: 好用
+

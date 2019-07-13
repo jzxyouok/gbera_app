@@ -14,9 +14,8 @@ void main() {
   runApp(NetosApp(
     taskbarTitle: 'gbera',
     welcome: 'gbera://dir1/page1.page',
-    initFramework: (framework) {
-      framework.load(path: "src/conf");
-
+    bindThemes: (framework) {
+      
       framework.themeBinder(
         theme: "mytheme/1.0",
         displays: (theme) {

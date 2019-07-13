@@ -63,8 +63,6 @@ class Framework implements IServiceProvider {
     Navigator.pushNamed(_context, pagePath, arguments: arguments);
   }
 
-  void load({String path}) {}
-
   void themeBinder({String theme, DisplayBinder displays}) {
     if (theme.indexOf("/") < 0) {
       throw '微主题未带版本号，表示为：mytheme/1.0';
