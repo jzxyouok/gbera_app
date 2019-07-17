@@ -74,3 +74,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  assets:
+    - lib/src/themes/gbera/theme.yaml
+    - lib/src/themes/gbera/versions/v-1.0/default_style.yaml
+    - lib/src/themes/gbera/versions/v-1.0/styles/blue_style.yaml
+    - lib/src/themes/gbera/versions/v-1.0/styles/green_style.yaml
+    - lib/src/themes/gbera/versions/v-1.0/displays/display1.yaml

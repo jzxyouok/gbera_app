@@ -61,6 +61,7 @@ class _GberaHomeDisplayState extends State<GberaHomeDisplay> {
               child: Text("....${widget.context.path()}"),
               onPressed: (){
 //                Navigator.pushNamed(context, 'gbera://dir1/dir2/page2.page');
+                  print('当前页：'+widget.context.path());
                   widget.context.forward('gbera://dir1/dir2/page2.page');
               },
 

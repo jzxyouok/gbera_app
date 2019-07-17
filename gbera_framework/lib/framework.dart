@@ -7,20 +7,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/widgets.dart';
-import 'package:gbera_framework/src/util.dart';
+import 'package:yaml/yaml.dart';
 import 'src/error_page.dart';
 import 'src/i_service.dart';
 import 'package:gbera_framework/src/updater_manager.dart';
 import 'src/theme_cacher.dart';
-import 'dart:async';
 
 typedef RouteElementGetter = Widget Function(BuildContext context);
 typedef DisplayGetter = Widget Function(DisplayContext context);
 typedef DisplayBinder = Map<String, DisplayGetter> Function(
-  Map<String, Object> theme,
+  YamlMap theme,
 );
-
-final framework = Framework.getFramework();
 
 class Framework implements IServiceProvider {
   static Framework _framework;
@@ -29,9 +26,7 @@ class Framework implements IServiceProvider {
   String remoteMicroappHost; //远程微应用配置服务器地址
   Dio dio;
 
-  BuildContext _context;
-
-  Framework._() {
+  Framework() {
     _updater = UpdateManager(this);
     _themeCacher = ThemeCacher(this);
 
@@ -39,13 +34,6 @@ class Framework implements IServiceProvider {
       'Content-Type': "text/html; charset=utf-8",
     });
     dio = Dio(options); //使用base配置可以通用，包括共享token
-  }
-
-  factory Framework.getFramework() {
-    if (_framework == null) {
-      _framework = Framework._();
-    }
-    return _framework;
   }
 
   @override
@@ -56,11 +44,9 @@ class Framework implements IServiceProvider {
     if ('@http' == name) {
       return dio;
     }
-  }
-
-  ///页面跳转
-  void forward(String pagePath, {Object arguments}) {
-    Navigator.pushNamed(_context, pagePath, arguments: arguments);
+    if ('@rootBundle' == name) {
+      return rootBundle;
+    }
   }
 
   void themeBinder({String theme, DisplayBinder displays}) {
@@ -138,12 +124,7 @@ class Framework implements IServiceProvider {
                 if (snapshot.hasError) {
                   return DefaultErrorPage(snapshot.error);
                 }
-                Map<String, Object> page = snapshot.data;
-
-                DisplayContext displayContext =
-                    DisplayContext(this, context, page);
-                var display = _themeCacher.getDisplay(displayContext);
-                return display;
+                return snapshot.data;
               case ConnectionState.active:
               case ConnectionState.waiting:
                 return Scaffold(
@@ -154,8 +135,8 @@ class Framework implements IServiceProvider {
                       children: <Widget>[
                         Padding(
                           padding: EdgeInsets.fromLTRB(0, 0, 0, 20),
-                          child:
-                              Text('${ModalRoute.of(context).settings.name}'),
+                          child: Text(
+                              'Waiting ${ModalRoute.of(context).settings.name}'),
                         ),
                         CircularProgressIndicator(),
                       ],
@@ -190,7 +171,7 @@ class Framework implements IServiceProvider {
     } else {
       microapp = path.substring(0, pos);
     }
-    var _app;
+    dynamic _app;
     await _updater.getMicroApp(microapp, onsuccess: (app) {
       _app = app;
     }, onerror: (e) {
@@ -199,14 +180,17 @@ class Framework implements IServiceProvider {
     if (_app == null) {
       throw '404 Not Microapp Found.';
     }
-    MicroAppParser parser = MicroAppParser(_app);
-    //查显示器
-    Map<String, Object> page = parser.getPage(path);
-    if (page == null) {
-      throw '404 Not Page Found.';
+    _app['name'] = microapp;
+    dynamic display;
+    try {
+      display = await _themeCacher.getDisplay(context, _app, path);
+    } catch (e) {
+      throw '$e';
     }
-    page['theme'] = _app['theme'];
-    return page;
+    if (display == null) {
+      throw '404 Display Not Found.';
+    }
+    return display;
   }
 
   Route onUnknownRoute(RouteSettings settings) {
@@ -226,50 +210,189 @@ class Framework implements IServiceProvider {
   }
 }
 
-class MicroAppParser {
-  final Map<String, Object> app;
+class DisplayContext {
+  IServiceProvider _site;
+  BuildContext _context;
+  MicroSite _mcrosite;
 
-  MicroAppParser(this.app);
+  MicroApp _microapp;
 
-  List<String> enumPagePath() {
-    String appname = app['name']?.toString();
-    Map<String, Object> pages = app['pages'];
-    List<String> list = List();
-    pages.forEach((pt, value) {
-      while (pt.startsWith("/")) {
-        pt = pt.substring(1, pt.length);
-      }
-      String path = appname + '://' + pt;
-      list.add(path);
-    });
-    return list;
+  String _name;
+
+  Map<String, DisplayMethod> _methods;
+  Map<String, DisplayProperty> _properties;
+
+  YamlMap _styleInfo;
+
+  YamlMap get styleInfo => _styleInfo;
+
+  String get name => _name;
+
+  MicroSite get mcrosite => _mcrosite;
+
+  MicroApp get microapp => _microapp;
+
+  Map<String, DisplayMethod> get methods => _methods;
+
+  Map<String, DisplayProperty> get properties => _properties;
+
+  String path() {
+    return ModalRoute.of(_context).settings.name;
   }
 
-  Map<String, Object> getPage(String path) {
-    int pos = path.indexOf("://");
-    var relPage = '';
-    if (pos > -1) {
-      relPage = path.substring(pos + '://'.length - 1, path.length);
+  Object arguments() {
+    return ModalRoute.of(_context).settings.arguments;
+  }
+
+  void forward(String pagePath, {Object arguments}) {
+    Navigator.pushNamed(_context, pagePath, arguments: arguments);
+  }
+
+  getService(String name) {
+    return _site.getService(name);
+  }
+
+  DisplayContext.create(this._site, this._context,
+      {Map<String, Object> app,
+      microTheme,
+      Map<String, Object> pageInfo,
+      styleInfo,
+      String displayName,
+      displayInfo}) {
+    _name = displayName;
+    this._microapp = MicroApp(app);
+    Map<String, Object> msite = pageInfo['microsite'];
+    if (msite == null) {
+      msite = app['microsite'];
     }
-    Map<String, Object> pages = app['pages'];
-    return pages[relPage];
+    _mcrosite = MicroSite(host: msite['host'], token: msite['token']);
+    _styleInfo = styleInfo;
+
+    YamlMap props = displayInfo['properties'];
+    _properties = Map();
+    if (props != null) {
+      props.forEach((key, v) {
+        YamlMap item = v;
+        var prop = DisplayProperty(
+            name: key, type: item['value-type'], usage: item['usage']);
+        _properties[key] = prop;
+      });
+    }
+
+    YamlMap methods = displayInfo['methods'];
+    _methods = Map();
+    if (methods != null) {
+      methods.forEach((key, v) {
+        YamlMap item = v;
+        var prop = DisplayMethod(
+          name: key,
+          usage: item['usage'],
+          command: item['command'],
+          protocol: item['protocol'],
+          returnType: item['return-type'],
+          restHeader: _paseRestHeader(item['rest-header']),
+          parameters: _paseMethodParameter(item['parameters']),
+        );
+        _methods[key] = prop;
+      });
+    }
+  }
+
+  _paseRestHeader(var restHeader) {
+    if (restHeader == null) return null;
+    YamlMap header = restHeader as YamlMap;
+    return RestHeader(
+      stubFace: header['Rest-StubFace'],
+      command: header['Rest-Command'],
+    );
+  }
+
+  _paseMethodParameter(var parameterMap) {
+    if (parameterMap == null) return null;
+    YamlMap parameters = parameterMap as YamlMap;
+    Map<String, DisplayMethodParameter> map = Map();
+    parameters.forEach((key, pobj) {
+      var p = DisplayMethodParameter(
+        name: key,
+        usage: pobj['usage'],
+        type: pobj['type'],
+        inrequest: pobj['in-request'],
+      );
+      map[key] = p;
+    });
+    return map;
   }
 }
 
-class DisplayContext {
-  final BuildContext context;
-  final Map<String, Object> page;
-  final IServiceProvider site;
+class DisplayProperty {
+  final String name;
+  final String type;
+  final String usage;
 
-  const DisplayContext(this.site, this.context, this.page);
+  const DisplayProperty({this.name, this.type, this.usage});
+}
 
-  String path() {
-    return ModalRoute.of(context).settings.name;
-  }
-  Object arguments(){
-    return ModalRoute.of(context).settings.arguments;
-  }
-  void forward(String pagePath, {Object arguments}) {
-    Navigator.pushNamed(context, pagePath, arguments: arguments);
+class DisplayMethod {
+  final String name;
+  final String command;
+  final String protocol;
+  final String usage;
+  final String returnType;
+  final RestHeader restHeader;
+  final Map<String, DisplayMethodParameter> parameters;
+
+  const DisplayMethod(
+      {this.name,
+      this.command,
+      this.protocol,
+      this.usage,
+      this.returnType,
+      this.restHeader,
+      this.parameters});
+}
+
+class DisplayMethodParameter {
+  final String name;
+  final String type;
+  final String usage;
+  final String inrequest;
+
+  const DisplayMethodParameter(
+      {this.name, this.type, this.usage, this.inrequest});
+}
+
+class RestHeader {
+  final String stubFace;
+  final String command;
+
+  const RestHeader({this.stubFace, this.command});
+}
+
+class MicroSite {
+  final String host;
+  final String token;
+
+  const MicroSite({this.host, this.token});
+}
+
+class MicroApp {
+  String name;
+  String title;
+  String desc;
+  String developer;
+  String from;
+  String style;
+  String home;
+  String theme;
+
+  MicroApp(Map<String, Object> app) {
+    name = app['name'];
+    title = app['title'];
+    desc = app['desc'];
+    developer = app['developer'];
+    from = app['from'];
+    home = app['home'];
+    style = app['style'];
+    theme = app['theme'];
   }
 }

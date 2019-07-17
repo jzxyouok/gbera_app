@@ -1,2 +1,2 @@
 #该版本默认使用的风格（在用户未选择自己的风格前）,default.yaml是固定名称的文件
-default: blue_style.yaml
+default: blue_style

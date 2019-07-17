@@ -30,7 +30,7 @@ class _NetosAppState extends State<NetosApp> {
    */
   @override
   Widget build(BuildContext context) {
-    final framework = Framework.getFramework();
+    final framework =Framework();
     widget.bindThemes(framework);
     //MaterialApp是一个应用中唯一的根，切换微应用就是切换脚手架
     return MaterialApp(
