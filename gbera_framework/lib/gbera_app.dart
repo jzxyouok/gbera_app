@@ -2,25 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:gbera_framework/framework.dart';
 import 'package:yaml/yaml.dart';
 
-class NetosApp extends StatefulWidget {
+import 'src/i_service.dart';
+
+class NetosApp extends StatefulWidget implements IServiceProvider{
   ///任务栏显示的标题
   final String taskbarTitle;
   Framework framework;
   ///登欢迎页
   final String welcome; //主页路径
-  ///绑定微主题
-  final bindThemes;
+  final ThemeData themeData;
   @override
   _NetosAppState createState() => _NetosAppState();
 
-   NetosApp({
+  @override
+  getService(String name) {
+    if('@welcome'==name){
+      return this.welcome;
+    }
+    return null;
+  }
+
+  NetosApp({
     this.taskbarTitle,
     this.welcome,
-    this.bindThemes(Framework framework),
-  }):assert(welcome!=null),assert(taskbarTitle!=null),assert(bindThemes!=null){
-    framework=Framework();
-    bindThemes(framework);
-  }
+    this.framework,
+    this.themeData,
+  }):assert(welcome!=null&&welcome.lastIndexOf("://")>0),assert(taskbarTitle!=null);
 }
 
 class _NetosAppState extends State<NetosApp> {
@@ -47,7 +54,7 @@ class _NetosAppState extends State<NetosApp> {
 //        return widget.taskbarTitle??'gbera';
 //      },
       //同title
-      theme: framework.onRenderTheme(context),
+      theme: widget.themeData,
       initialRoute: widget.welcome,
       //初始化是官方主页地址
 //      routes: framework.onOfficialMicroappRouters(context,widget.welcome),

@@ -10,21 +10,12 @@ import 'src/themes/gbera/versions/v-1.0/displays/backdrop_display.dart';
 //flutter中的dart不支持动态反射实例化类型
 //面向微主题开发，向framework注册微主题
 
-void main() {
-  runApp(NetosApp(
-    taskbarTitle: 'gbera',
-    welcome: 'gbera://public/login.page',
+void main() async {
+  await Framework(
+    remoteMicroappHost: 'http://192.168.1.154:7800',
+    clearCaches: true,
+    remoteMicroappToken: 'xxxx',
     bindThemes: (framework) {
-      framework.initEnv(
-        remoteMicroappHost: 'http://localhost:7800',
-        clearCaches: true,
-        oninit: (framework,context)async{
-          print('......init');
-        },
-        onexit: (framework)async{
-          print('.......exit');
-        },
-      );
       framework.themeBinder(
         theme: "gbera/1.0",
         displays: (theme) {
@@ -42,5 +33,14 @@ void main() {
         },
       );
     },
-  ));
+  ).runMicroAppOn(
+    taskbarTitle: 'gbera',
+    welcome: 'gbera://public/login.page',
+    onBeforeRun: (app) {
+      print("启动中..........");
+    },
+    onAfterRun: (app){
+      print("..........已启动");
+    }
+  );
 }

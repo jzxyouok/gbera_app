@@ -14,6 +14,7 @@ import 'src/error_page.dart';
 import 'src/i_service.dart';
 import 'package:gbera_framework/src/updater_manager.dart';
 import 'src/theme_cacher.dart';
+import 'src/util.dart';
 
 typedef RouteElementGetter = Widget Function(BuildContext context);
 typedef DisplayGetter = Widget Function(DisplayContext context);
@@ -30,28 +31,37 @@ class Framework implements IServiceProvider {
   String _remoteMicroappHost; //远程微应用配置服务器地址
   String _remoteMicroappToken;
   Dio _dio;
-  OnFrameworkInit onInit;
-  OnFrameworkExit onExit;
-
-  bool _inited;
-
+  IServiceProvider _parent;
   bool _clearCaches;
-
-  bool get inited => _inited;
 
   String get remoteMicroappHost => _remoteMicroappHost;
 
   String get remoteMicroappToken => _remoteMicroappToken;
 
-  Framework() {
+  Framework({
+    String remoteMicroappHost,
+    String remoteMicroappToken,
+    bool clearCaches,
+    void bindThemes(Framework framework),
+  }) {
+    if (StringUtil.isEmpty(remoteMicroappHost)) {
+      throw '404 remoteMicroappHost Is Empty';
+    }
+    if (bindThemes == null) {
+      throw '404 bindThemes Not Used.';
+    }
+    _remoteMicroappHost = remoteMicroappHost;
+    _remoteMicroappToken = remoteMicroappToken;
+    _clearCaches = clearCaches ? false : clearCaches;
+
     _updater = UpdateManager(this);
     _themeCacher = ThemeCacher(this);
-    _clearCaches = false;
-    _inited = false;
+
     BaseOptions options = BaseOptions(headers: {
       'Content-Type': "text/html; charset=utf-8",
     });
     _dio = Dio(options); //使用base配置可以通用，包括共享token
+    bindThemes(this); //执行绑定
   }
 
   @override
@@ -65,6 +75,7 @@ class Framework implements IServiceProvider {
     if ('@rootBundle' == name) {
       return rootBundle;
     }
+    return _parent ?? _parent.getService(name);
   }
 
   void themeBinder({String theme, DisplayBinder displays}) {
@@ -75,56 +86,6 @@ class Framework implements IServiceProvider {
     _themeCacher.cacheBinder(theme, displays);
   }
 
-/*
-  ///由于异步请求无法同步获取远程路由，因此该方法在调用处已被注释掉，不会被执行
-  Map<String, RouteElementGetter> onOfficialMicroappRouters(
-      BuildContext context, String welcome) {
-    //为了主微应用页面间切换的性能考虑，在此方法中一次性初始化官方（app启动的第一个微应用）微应用的路由表：微应用页地址->display实例
-
-    assert(!StringUtil.isEmpty(welcome));
-    int pos = welcome.indexOf("://");
-    dynamic microapp;
-    if (pos < 0) {
-      microapp = welcome;
-    } else {
-      microapp = welcome.substring(0, pos);
-    }
-    var _app; //它大爷的，不论什么方式都无法采用异步转同步，人家是真的异步架构，NB
-
-//    var completer=Completer();
-//    var f= completer.future;
-
-    Future f = Future.sync(() {
-      return Future.wait({
-        _updater.getMicroApp(microapp, onsuccess: (app) {
-          _app = app;
-          print('----++---------------------------$_app');
-        })
-      });
-    });
-    print('-------------------------------$_app');
-    MicroAppParser parser = MicroAppParser(_app);
-    List<String> pathlist = parser.enumPagePath();
-    Map<String, RouteElementGetter> map = Map();
-    pathlist.forEach((path) {
-      //查显示器
-      Map<String, Object> page = parser.getPage(path);
-
-      if (path == null) {
-        return false;
-      }
-      var displayName = page['display'];
-      String themefull = _app['theme'];
-
-      var display = _themeCacher.getDisplay(themefull, displayName);
-      if (display != null) {
-        map[path] = (context) => display;
-      }
-      return true;
-    });
-    return map;
-  }
-*/
 //return new MaterialPageRoute(builder: builder, settings: settings);
   Route onGenerateMicroappRouters(RouteSettings settings) {
     //如果不存在则到网上查找页，如果网上仍没有则返回null，如果网上有则检查是否有display，如果没有display则返回null
@@ -133,7 +94,8 @@ class Framework implements IServiceProvider {
       settings: settings,
       builder: (BuildContext context) {
         return FutureBuilder(
-          future: _loading(context),
+//          initialData: ,
+          future: _getMicroDisplayLazy(context),
           builder: (context, snapshot) {
             switch (snapshot.connectionState) {
               case ConnectionState.done:
@@ -177,30 +139,6 @@ class Framework implements IServiceProvider {
 
     return route;
   }
-  //flutter没有原子变量
-  __getInitState()async{
-    if(!inited){
-      _inited=true;
-      return false;//告诉调用者未初始化
-    }
-    return true;//已初始化
-  }
-  _loading(BuildContext context) async {
-    //如果框架未初始化，则初始化
-    if (await __getInitState()!=true) {
-      if (_clearCaches) {
-        await clearCaches();
-      }
-      await _doInit(context);
-      if (onInit != null) {
-        await onInit(this, context);
-      }
-    }
-
-    return _getMicroDisplayLazy(context);
-  }
-
-  _doInit(BuildContext context) async {}
 
   _getMicroDisplayLazy(BuildContext context) async {
     var settings = ModalRoute.of(context).settings;
@@ -239,27 +177,6 @@ class Framework implements IServiceProvider {
     return null;
   }
 
-  ///初始化环境
-  void initEnv({
-    OnFrameworkInit oninit,
-    OnFrameworkExit onexit,
-    bool clearCaches,
-    String remoteMicroappHost,
-    String remoteMicroappToken,
-  }) {
-    this._remoteMicroappHost = remoteMicroappHost;
-    this._remoteMicroappToken = remoteMicroappToken;
-    this.onInit = oninit;
-    this.onExit = onexit;
-    this._clearCaches = clearCaches;
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-      );
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
-  }
-
   clearCaches() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String apphomeDir = '${appDocDir.path}/apps';
@@ -275,6 +192,223 @@ class Framework implements IServiceProvider {
     );
 
     return td;
+  }
+
+  ///初始化环境
+  runMicroAppOn(
+      {String taskbarTitle,
+      String welcome,
+      onBeforeRun(Widget app),
+      onAfterRun(Widget app)}) async {
+    if (welcome.lastIndexOf("://") < 0) {
+      throw '500 Welcome Not a Full Path.';
+    }
+    if (Platform.isAndroid) {
+      SystemUiOverlayStyle systemUiOverlayStyle = SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+      );
+      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
+    }
+    if (_clearCaches) {
+      await clearCaches();
+    }
+    YamlMap defaultStyleInfo = await _loadDefaultStyle(welcome);
+    ThemeData themeData = _parseRootThemeData(defaultStyleInfo);
+    //启动app
+    NetosApp netosApp = NetosApp(
+      taskbarTitle: taskbarTitle,
+      welcome: welcome,
+      framework: this,
+      themeData: themeData,
+    );
+    this._parent = netosApp;
+    if (onBeforeRun != null) {
+      onBeforeRun(netosApp);
+    }
+    runApp(netosApp);
+    if (onAfterRun != null) {
+      onAfterRun(netosApp);
+    }
+    return this;
+  }
+
+  _loadDefaultStyle(String welcome) async {
+    int pos = welcome.lastIndexOf("://");
+    String appname = welcome.substring(0, pos);
+    dynamic _app;
+    await _updater.getMicroApp(appname, onsuccess: (app) {
+      _app = app;
+    }, onerror: (e) {
+      throw '500 $e.';
+    });
+    if (_app == null) {
+      throw '404 Not Microapp Found.';
+    }
+    String themefull = _app['theme'];
+    String style = _app['style'];
+    String theme;
+    String version;
+    pos = themefull.lastIndexOf("/");
+    if (pos < 0) {
+      theme = themefull;
+      version = '1.0';
+    } else {
+      theme = themefull.substring(0, pos);
+      version = themefull.substring(pos + 1, themefull.length);
+    }
+    YamlMap defaultStyleInfo =
+        await _themeCacher.getDefaultStyle(theme, version, style);
+    if (defaultStyleInfo == null) {
+      throw '404 Default Style Info Not Found. ${appname}';
+    }
+    //转换为themeData
+    return defaultStyleInfo;
+  }
+
+  ThemeData _parseRootThemeData(YamlMap defaultStyleInfo) {
+    YamlMap theme = defaultStyleInfo['theme'];
+    if (theme == null) return null;
+
+    getColorByHex(String styleItem, String text) {
+      if (StringUtil.isEmpty(text)) {
+        return null;
+      }
+      if (!text.startsWith("#") && !text.startsWith("0x")) {
+        debugPrint('主题：$styleItem 的定义即不是以#开头也不是以0x开头，请求单引号包括');
+        return null;
+      }
+      while (text.startsWith("#")) {
+        text = text.substring(1, text.length);
+      }
+      while (text.startsWith("0x")) {
+        text = text.substring(2, text.length);
+      }
+      var intcolor = int.parse(text, radix: 16);
+      return Color(intcolor);
+    }
+
+    getMaterialColor(String styleItem, YamlMap map) {
+      if (map == null) return null;
+      dynamic py = map['primary'];
+      py = py == null ? null : '$py';
+      var primary = getColorByHex(styleItem, py);
+      YamlList swatchs = map['swatchs'];
+      Map<int, Color> mc = Map();
+      swatchs.forEach((item) {
+        YamlMap obj = item as YamlMap;
+        obj.forEach((key, v) {
+          String text = v == null ? null : '$v';
+          var c = getColorByHex(styleItem, text);
+          if (c != null) {
+            mc[key] = c;
+          }
+        });
+      });
+
+      return MaterialColor(primary.value, mc);
+    }
+
+    getIconThemeData(String styleItem, YamlMap map) {
+      if(map==null)return null;
+      return IconThemeData(
+        color: getColorByHex(styleItem, map['color']),
+        opacity: map['opacity'],
+        size: map['size'],
+      );
+    }
+
+    return ThemeData(
+      backgroundColor:
+          getColorByHex('backgroundColor', theme['backgroundColor']),
+      accentColor: getColorByHex('accentColor', theme['accentColor']),
+      accentColorBrightness: theme['accentColorBrightness'] == null
+          ? null
+          : () {
+              switch (theme['accentColorBrightness']) {
+                case 'dark':
+                  return Brightness.dark;
+                case 'light':
+                  return Brightness.light;
+              }
+              return null;
+            }(),
+      accentIconTheme:
+          getIconThemeData('accentIconTheme', theme['accentIconTheme']),
+      bottomAppBarColor:
+          getColorByHex('bottomAppBarColor', theme['bottomAppBarColor']),
+      brightness: theme['brightness'] == null
+          ? null
+          : () {
+              switch (theme['brightness']) {
+                case 'dark':
+                  return Brightness.dark;
+                case 'light':
+                  return Brightness.light;
+              }
+              return null;
+            }(),
+      buttonColor: getColorByHex('buttonColor', theme['buttonColor']),
+      canvasColor: getColorByHex('canvasColor', theme['canvasColor']),
+      cardColor: getColorByHex('cardColor', theme['cardColor']),
+      cursorColor: getColorByHex('cursorColor', theme['cursorColor']),
+      dialogBackgroundColor: getColorByHex(
+          'dialogBackgroundColor', theme['dialogBackgroundColor']),
+      disabledColor: getColorByHex('disabledColor', theme['disabledColor']),
+      dividerColor: getColorByHex('dividerColor', theme['dividerColor']),
+      errorColor: getColorByHex('errorColor', theme['errorColor']),
+      focusColor: getColorByHex('focusColor', theme['focusColor']),
+      fontFamily: theme['fontFamily'],
+      highlightColor: getColorByHex('highlightColor', theme['highlightColor']),
+      hintColor: getColorByHex('hintColor', theme['hintColor']),
+      hoverColor: getColorByHex('hoverColor', theme['hoverColor']),
+      indicatorColor: getColorByHex('indicatorColor', theme['indicatorColor']),
+      platform: theme['platform'] == null
+          ? null
+          : () {
+              switch (theme['platform']) {
+                case 'android':
+                  return TargetPlatform.android;
+                case 'ios':
+                  return TargetPlatform.iOS;
+                case 'fuchsia':
+                  return TargetPlatform.fuchsia;
+              }
+              return null;
+            }(),
+      primaryColor: getColorByHex('primaryColor', theme['primaryColor']),
+      primaryColorBrightness: theme['primaryColorBrightness'] == null
+          ? null
+          : () {
+              switch (theme['primaryColorBrightness']) {
+                case 'dark':
+                  return Brightness.dark;
+                case 'light':
+                  return Brightness.light;
+              }
+              return null;
+            }(),
+      primaryColorDark:
+          getColorByHex('primaryColorDark', theme['primaryColorDark']),
+      primaryColorLight:
+          getColorByHex('primaryColorLight', theme['primaryColorLight']),
+      primarySwatch: getMaterialColor('primarySwatch', theme['primarySwatch']),
+      scaffoldBackgroundColor: getColorByHex(
+          'scaffoldBackgroundColor', theme['scaffoldBackgroundColor']),
+      secondaryHeaderColor:
+          getColorByHex('secondaryHeaderColor', theme['secondaryHeaderColor']),
+      selectedRowColor:
+          getColorByHex('selectedRowColor', theme['selectedRowColor']),
+      splashColor: getColorByHex('splashColor', theme['splashColor']),
+      textSelectionColor:
+          getColorByHex('textSelectionColor', theme['textSelectionColor']),
+      textSelectionHandleColor: getColorByHex(
+          'textSelectionHandleColor', theme['textSelectionHandleColor']),
+      textTheme: theme['textTheme'],
+      toggleableActiveColor: getColorByHex(
+          'toggleableActiveColor', theme['toggleableActiveColor']),
+      unselectedWidgetColor: getColorByHex(
+          'unselectedWidgetColor', theme['unselectedWidgetColor']),
+    );
   }
 }
 

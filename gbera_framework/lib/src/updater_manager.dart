@@ -15,9 +15,7 @@ class UpdateManager implements IUpdateManager {
 
   @override
   getMicroApp(String microapp, {onsuccess, onerror}) async {
-
     dynamic app=_appLocalCacher.getApp(microapp);
-
     if(app!=null&&onsuccess!=null){
       onsuccess(app);
       return ;

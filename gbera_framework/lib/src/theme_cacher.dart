@@ -15,6 +15,7 @@ mixin IThemeCacher {
       BuildContext context, Map<String, Object> app, String path) async {}
 
   void cacheBinder(String theme, displays) {}
+  getDefaultStyle(String theme, String version, String style)async{}
 }
 
 class ThemeCacher implements IThemeCacher {
@@ -24,7 +25,16 @@ class ThemeCacher implements IThemeCacher {
 
   ThemeCacher(this.parent) {
     this._binders = Map();
-    _displayGetters = Map();
+    this._displayGetters = Map();
+  }
+
+  @override
+  getDefaultStyle(String theme, String version, String style) async{
+    var styleInfo = await _getStyleInfo(theme, version, style);
+    if (styleInfo == null) {
+      throw '404 MicroStyle Not Found.';
+    }
+    return styleInfo;
   }
 
   @override

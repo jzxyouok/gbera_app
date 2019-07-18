@@ -17,7 +17,20 @@ fonts:
         weight: 700
 colors:
   -
-    red: \#cccc
-    green: \#939ee
+    red: '#cccc'
+    green: '#939ee'
 
-
+theme:
+  primarySwatch:
+    primary: '0xFF4CAF50'
+    swatchs:
+      - 50: '0xFFE8F5E9'
+      - 100: '0xFFC8E6C9'
+      - 200: '0xFFA5D6A7'
+      - 300: '0xFF81C784'
+      - 400: '0xFF66BB6A'
+      - 500: '0xFF4CAF50'
+      - 600: '0xFF43A047'
+      - 700: '0xFF388E3C'
+      - 800: '0xFF2E7D32'
+      - 900: '0xFF1B5E20'
