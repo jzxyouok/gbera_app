@@ -83,6 +83,9 @@ class ThemeCacher implements IThemeCacher {
         _displayGetters[themefull];
     if (cachedDisplayGetters != null) {
       var display = cachedDisplayGetters[dname];
+      if(display==null){
+        throw '404 Display Not Found ${dname}';
+      }
       return display(context);
     }
 
@@ -94,6 +97,9 @@ class ThemeCacher implements IThemeCacher {
     _displayGetters[themefull] = displayGetters;
 
     var display = displayGetters[dname];
+    if(display==null){
+      throw '404 Display Not Found ${dname}';
+    }
     return display(context);
   }
 

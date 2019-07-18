@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/widgets.dart';
+import 'package:gbera_framework/gbera_app.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:yaml/yaml.dart';
 import 'src/error_page.dart';
 import 'src/i_service.dart';
@@ -18,31 +20,47 @@ typedef DisplayGetter = Widget Function(DisplayContext context);
 typedef DisplayBinder = Map<String, DisplayGetter> Function(
   YamlMap theme,
 );
+typedef OnFrameworkInit = Future Function(
+    Framework framework, BuildContext context);
+typedef OnFrameworkExit = Future Function(Framework framework);
 
 class Framework implements IServiceProvider {
-  static Framework _framework;
   IUpdateManager _updater;
   IThemeCacher _themeCacher;
-  String remoteMicroappHost; //远程微应用配置服务器地址
-  Dio dio;
+  String _remoteMicroappHost; //远程微应用配置服务器地址
+  String _remoteMicroappToken;
+  Dio _dio;
+  OnFrameworkInit onInit;
+  OnFrameworkExit onExit;
+
+  bool _inited;
+
+  bool _clearCaches;
+
+  bool get inited => _inited;
+
+  String get remoteMicroappHost => _remoteMicroappHost;
+
+  String get remoteMicroappToken => _remoteMicroappToken;
 
   Framework() {
     _updater = UpdateManager(this);
     _themeCacher = ThemeCacher(this);
-
+    _clearCaches = false;
+    _inited = false;
     BaseOptions options = BaseOptions(headers: {
       'Content-Type': "text/html; charset=utf-8",
     });
-    dio = Dio(options); //使用base配置可以通用，包括共享token
+    _dio = Dio(options); //使用base配置可以通用，包括共享token
   }
 
   @override
   getService(String name) {
     if ("@remote.updater" == name) {
-      return '${this.remoteMicroappHost}/microapp/updateManager.service';
+      return '${this._remoteMicroappHost}/microapp/updateManager.service';
     }
     if ('@http' == name) {
-      return dio;
+      return _dio;
     }
     if ('@rootBundle' == name) {
       return rootBundle;
@@ -108,15 +126,14 @@ class Framework implements IServiceProvider {
   }
 */
 //return new MaterialPageRoute(builder: builder, settings: settings);
-  Route onUnofficialMicroappRouters(RouteSettings settings) {
+  Route onGenerateMicroappRouters(RouteSettings settings) {
     //如果不存在则到网上查找页，如果网上仍没有则返回null，如果网上有则检查是否有display，如果没有display则返回null
     //懒加载模式，每次查找一个显示器绑定之
-
     var route = MaterialPageRoute(
       settings: settings,
       builder: (BuildContext context) {
         return FutureBuilder(
-          future: _getMicroPageLazy(context),
+          future: _loading(context),
           builder: (context, snapshot) {
             switch (snapshot.connectionState) {
               case ConnectionState.done:
@@ -160,8 +177,32 @@ class Framework implements IServiceProvider {
 
     return route;
   }
+  //flutter没有原子变量
+  __getInitState()async{
+    if(!inited){
+      _inited=true;
+      return false;//告诉调用者未初始化
+    }
+    return true;//已初始化
+  }
+  _loading(BuildContext context) async {
+    //如果框架未初始化，则初始化
+    if (await __getInitState()!=true) {
+      if (_clearCaches) {
+        await clearCaches();
+      }
+      await _doInit(context);
+      if (onInit != null) {
+        await onInit(this, context);
+      }
+    }
 
-  _getMicroPageLazy(BuildContext context) async {
+    return _getMicroDisplayLazy(context);
+  }
+
+  _doInit(BuildContext context) async {}
+
+  _getMicroDisplayLazy(BuildContext context) async {
     var settings = ModalRoute.of(context).settings;
     var path = settings.name;
     int pos = path.indexOf("://");
@@ -199,14 +240,41 @@ class Framework implements IServiceProvider {
   }
 
   ///初始化环境
-  void initEnv({String remoteMicroappHost}) {
-    this.remoteMicroappHost = remoteMicroappHost;
+  void initEnv({
+    OnFrameworkInit oninit,
+    OnFrameworkExit onexit,
+    bool clearCaches,
+    String remoteMicroappHost,
+    String remoteMicroappToken,
+  }) {
+    this._remoteMicroappHost = remoteMicroappHost;
+    this._remoteMicroappToken = remoteMicroappToken;
+    this.onInit = oninit;
+    this.onExit = onexit;
+    this._clearCaches = clearCaches;
     if (Platform.isAndroid) {
       SystemUiOverlayStyle systemUiOverlayStyle = SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
       );
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
+  }
+
+  clearCaches() async {
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String apphomeDir = '${appDocDir.path}/apps';
+    Directory dir = Directory(apphomeDir);
+    if (dir.existsSync()) {
+      dir.deleteSync(recursive: true);
+    }
+  }
+
+  onRenderTheme(BuildContext context) {
+    var td = ThemeData(
+      primarySwatch: Colors.green,
+    );
+
+    return td;
   }
 }
 

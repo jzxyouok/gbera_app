@@ -79,4 +79,5 @@ flutter:
     - lib/src/themes/gbera/versions/v-1.0/default_style.yaml
     - lib/src/themes/gbera/versions/v-1.0/styles/blue_style.yaml
     - lib/src/themes/gbera/versions/v-1.0/styles/green_style.yaml
-    - lib/src/themes/gbera/versions/v-1.0/displays/display1.yaml
+    - lib/src/themes/gbera/versions/v-1.0/displays/login_display.yaml
+    - lib/src/themes/gbera/versions/v-1.0/displays/backdrop_display.yaml

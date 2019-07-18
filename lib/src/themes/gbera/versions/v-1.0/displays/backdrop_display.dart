@@ -3,9 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gbera_framework/framework.dart';
 
-class GberaHomeDisplay extends StatefulWidget {
+class BackdropDisplay extends StatefulWidget {
 
-  GberaHomeDisplay({Key key, this.title,this.context}) : super(key: key);
+  BackdropDisplay({Key key, this.title,this.context}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -19,10 +19,10 @@ class GberaHomeDisplay extends StatefulWidget {
   final String title; //应用的标题，不是android任务栏状态时的标题
 
   @override
-  _GberaHomeDisplayState createState() => _GberaHomeDisplayState();
+  _BackdropDisplayState createState() => _BackdropDisplayState();
 }
 
-class _GberaHomeDisplayState extends State<GberaHomeDisplay> {
+class _BackdropDisplayState extends State<BackdropDisplay> {
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -62,7 +62,7 @@ class _GberaHomeDisplayState extends State<GberaHomeDisplay> {
               onPressed: (){
 //                Navigator.pushNamed(context, 'gbera://dir1/dir2/page2.page');
                   print('当前页：'+widget.context.path());
-                  widget.context.forward('gbera://dir1/dir2/page2.page');
+                  widget.context.forward('gbera://public/login.page');
               },
 
             ),
