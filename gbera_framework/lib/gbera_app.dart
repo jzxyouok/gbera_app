@@ -20,7 +20,6 @@ class NetosApp extends StatefulWidget {
   }):assert(welcome!=null),assert(taskbarTitle!=null),assert(bindThemes!=null){
     framework=Framework();
     bindThemes(framework);
-    print("+++++++++++");
   }
 }
 

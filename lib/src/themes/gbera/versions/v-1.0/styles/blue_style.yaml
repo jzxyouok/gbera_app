@@ -1,0 +1,24 @@
+name: 淡蓝色
+title: 很现代的
+assets:
+  dot_burr:
+    images/a_dot_burr.jpeg
+  dot_ham:
+    images/a_dot_ham.jpeg
+fonts:
+  - family: Schyler
+    fonts:
+      - asset: fonts/Schyler-Regular.ttf
+      - asset: fonts/Schyler-Italic.ttf
+        style: italic
+  - family: Trajan Pro
+    fonts:
+      - asset: fonts/TrajanPro.ttf
+      - asset: fonts/TrajanPro_Bold.ttf
+        weight: 700
+colors:
+  -
+    red: \#cccc
+    green: \#939ee
+
+
