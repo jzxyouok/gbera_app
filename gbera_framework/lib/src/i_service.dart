@@ -1,24 +1,71 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 
+import '../framework.dart';
+import 'display_context.dart';
+
+typedef RouteElementGetter = Widget Function(BuildContext context);
+typedef DisplayGetter = Widget Function(DisplayContext context);
+typedef DisplayBinder = Map<String, DisplayGetter> Function(
+  IPortalInfo portalInfo,
+);
+
+typedef OnFrameworkInit = Future Function(
+    Framework framework, BuildContext context);
+typedef OnFrameworkExit = Future Function(Framework framework);
+
 mixin IServiceProvider {
   getService(String name);
 }
 
-typedef onSuccess = Function(Map<String, Object> app);
-typedef onError = Function(dynamic err);
-mixin IUpdateManager {
-  Future getMicroApp(String microapp, {onSuccess onsuccess, onError onerror});
+///系统目录，里面有已安装的应用和框架
+mixin ISystemDir {
+  PageInfo getPageInfo({
+    String pagePath,
+  });
+
+  Map<String, Object> getAppInfo(String microapp);
+  IPortalInfo getPortalInfo(PageInfo pageInfo);
+  Future init();
+
 }
 
-///本地缓冲
-///为什么不用appname/version呢，是因为缓冲器仅缓冲当前使用的一个版本
-mixin IAppLocalCacher {
-  void init();
+mixin IAppInstaller {
+  Future init();
 
-  void dispose();
+  Future installApp(String appname);
 
-  Map<String, Object> getApp(String microapp);
+  bool isInstalledApp(String appname);
 
-  void putApp(Map<String, Object> app);
+  String getInstalledAppVersion(String appname);
+}
+
+mixin IDisplayContainer {
+  DisplayGetter getDisplayGetter(PageInfo pageInfo);
+
+  void addBinder(String theme, displays);
+}
+mixin IPortalInfo {
+  Map<String,Object> getInfo();
+  Map<String,Object> getUseStyle();
+}
+
+class PageInfo {
+  String app;
+  String display;
+  String portal;
+  String style;
+  String micrositeHost;
+  String micrositeToken;
+  String url;
+
+  PageInfo({
+    this.app,
+    this.display,
+    this.portal,
+    this.style,
+    this.micrositeHost,
+    this.micrositeToken,
+    this.url,
+  });
 }

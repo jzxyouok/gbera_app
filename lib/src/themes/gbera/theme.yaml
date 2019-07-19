@@ -1,8 +1,0 @@
-theme: 餐饮行业主题
-desc: 餐饮行业主题
-ctime: 2018-10-3 23:56
-developer: cj
-#插入到哪些分类维度下,将来对主题有什么发布的维度就扩展什么插件
-plugin:
-  industry:  /canyin/chuancai/shujiafengwei
-  locality: /zh/guangdong/guangzhou
