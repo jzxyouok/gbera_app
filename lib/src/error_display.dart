@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:gbera_framework/framework.dart';
 
-
-class DefaultErrorPage extends StatelessWidget {
-
+class ErrorDispaly extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Object arguments=ModalRoute.of(context).settings.arguments;
-    String message='';
-    if(arguments!=null&&(arguments is Map<String,Object>)){
-      message=arguments['error'];
+    Object arguments = ModalRoute.of(context).settings.arguments;
+    String message = '';
+    if (arguments != null && (arguments is Map<String, Object>)) {
+      message = arguments['error'];
     }
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          '这是微应用自定义的错误页',
+        ),
+      ),
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(10),
@@ -21,13 +25,6 @@ class DefaultErrorPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Padding(
-                padding: EdgeInsets.fromLTRB(0, 0, 0, 20),
-                child: Text(
-                  '${ModalRoute.of(context).settings.name}',
-                  textAlign: TextAlign.left,
-                ),
-              ),
               Text(
                 message,
                 style: TextStyle(
@@ -43,19 +40,6 @@ class DefaultErrorPage extends StatelessWidget {
       ),
     );
   }
-}
-
-class BeforeErrorState{
-  StackTrace _stackTrace;
-  dynamic _exception;
-
-  StackTrace get stackTrace => _stackTrace;
-
-  BeforeErrorState({StackTrace stackTrace, dynamic exception}){
-    _stackTrace=stackTrace;
-    _exception=exception;
-  }
-
-  dynamic get exception => _exception;
-
+  final DisplayContext context;
+  const ErrorDispaly({this.context});
 }

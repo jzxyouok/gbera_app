@@ -11,7 +11,7 @@ class NetosApp extends StatefulWidget implements IServiceProvider {
   ///登欢迎页
   final String welcome; //主页路径
   final ThemeData themeData;
-  final Widget errorPage;
+
   @override
   _NetosAppState createState() => _NetosAppState();
 
@@ -28,7 +28,6 @@ class NetosApp extends StatefulWidget implements IServiceProvider {
     this.welcome,
     this.framework,
     this.themeData,
-    this.errorPage,
   })  : assert(welcome != null && welcome.lastIndexOf("://") > 0),
         assert(taskbarTitle != null);
 }

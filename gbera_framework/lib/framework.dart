@@ -19,8 +19,10 @@ import 'package:gbera_framework/util.dart';
 
 import 'src/theme_data.dart';
 
+export 'util.dart';
 export 'src/display_context.dart';
 export 'src/i_service.dart';
+export 'src/error_page.dart';
 
 class Framework implements IServiceProvider {
   IAppInstaller _installer;
@@ -32,6 +34,7 @@ class Framework implements IServiceProvider {
   IServiceProvider _parent;
   bool _isEmptySystemDir;
   Widget _errorPage;
+  BeforeErrorState _beforeErrorState; //启动app前发生错误，该错误会留到加载完主页后显示。
 
   Widget get errorPage => _errorPage;
 
@@ -55,7 +58,7 @@ class Framework implements IServiceProvider {
     _remoteMicroappHost = remoteMicroappHost;
     _remoteMicroappToken = remoteMicroappToken;
     _isEmptySystemDir = isEmptySystemDir == null ? false : isEmptySystemDir;
-    _errorPage=errorPage;
+    _errorPage = errorPage;
     _installer = AppInstaller(this);
     _systemDir = SystemDir(this);
     _displayContainer = DisplayContainer(this);
@@ -93,39 +96,110 @@ class Framework implements IServiceProvider {
 
 //return new MaterialPageRoute(builder: builder, settings: settings);
   Route onGenerateMicroappRouters(RouteSettings settings) {
-    PageInfo pageInfo = _systemDir.getPageInfo(
-      pagePath: settings.name,
-    );
-    if (pageInfo == null) {
-      return null;
+    if (_beforeErrorState != null) {
+      //如果在启动前有错误，则显示错误页
+      RouteSettings errorsettings = RouteSettings(
+        name: settings.name,
+        isInitialRoute: false,
+        arguments: {'error': _beforeErrorState.exception.toString()},
+      );
+      _beforeErrorState = null;
+      return MaterialPageRoute(
+        settings: errorsettings,
+        builder: (BuildContext context) {
+          return errorPage != null ? errorPage : DefaultErrorPage();
+        },
+      );
     }
-    var displayGetter = _displayContainer.getDisplayGetter(pageInfo);
-    if (displayGetter == null) {
-      return null;
+    try {
+      PageInfo pageInfo = _systemDir.getPageInfo(
+        pagePath: settings.name,
+      );
+      if (pageInfo == null) {
+        throw '404 未发现页';
+      }
+      dynamic displayGetter = _displayContainer.getDisplayGetter(pageInfo);
+      if (displayGetter == null) {
+        throw '404 未发现显示获取器';
+      }
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (BuildContext context) {
+          DisplayContext displayContext = DisplayContext(
+            site: this,
+            context: context,
+            pageInfo: pageInfo,
+          );
+          var display = displayGetter(displayContext);
+          if (display == null) {
+            throw '500 获取显示器实例失败';
+          }
+          return display;
+        },
+      );
+    } catch (e, stack) {
+      var error = FlutterErrorDetails(exception: e, stack: stack);
+      FlutterError.reportError(error);
+      //注释掉原因是让错误页直接接收的就是From页的RouteSettings即可
+      RouteSettings errorsettings = RouteSettings(
+        name: settings.name,
+        isInitialRoute: false,
+        arguments: {'error': e.toString()},
+      );
+      return MaterialPageRoute(
+        settings: errorsettings,
+        builder: (BuildContext context) {
+          Widget _errorPage;
+          String microapp =
+              settings.name.substring(0, settings.name.indexOf("://"));
+          Map<String, Object> appinfo = _systemDir.getAppInfo(microapp);
+          if (appinfo != null) {
+            String errorConfPage = appinfo['error'];
+            if (!StringUtil.isEmpty(errorConfPage)) {
+              try {
+                PageInfo pageInfo = _systemDir.getPageInfo(
+                  pagePath: '$microapp:/$errorConfPage',
+                );
+                DisplayContext displayContext = DisplayContext(
+                  site: this,
+                  context: context,
+                  pageInfo: pageInfo,
+                );
+                dynamic displayGetter = _displayContainer.getDisplayGetter(
+                    pageInfo);
+                _errorPage = displayGetter(displayContext);
+              }catch(e,stack){
+                var error = FlutterErrorDetails(exception: e, stack: stack);
+                FlutterError.reportError(error);
+                _errorPage = DefaultErrorPage();
+              }
+            }
+          }
+          if (_errorPage == null) {
+            _errorPage = errorPage;
+          }
+          if (_errorPage == null) {
+            _errorPage = DefaultErrorPage();
+          }
+          return _errorPage;
+        },
+      );
     }
-    return MaterialPageRoute(
-      settings: settings,
-      builder: (BuildContext context) {
-        DisplayContext displayContext = DisplayContext(
-          site: this,
-          context: context,
-          pageInfo: pageInfo,
-        );
-        var display=displayGetter(displayContext);
-        if(display==null)return null;
-        return display;
-      },
-    );
   }
 
   Route onUnknownRoute(RouteSettings settings) {
     //如果页仍不存在，或者是对应的显示器不存在，则弹出404界面
+    RouteSettings errorsettings = RouteSettings(
+      name: settings.name,
+      isInitialRoute: false,
+      arguments: {'error': '404 请求的页不存在'},
+    );
+    var details = FlutterErrorDetails(exception: '404 请求的页不存在');
+    FlutterError.reportError(details);
     return MaterialPageRoute(
-        settings: settings,
+        settings: errorsettings,
         builder: (BuildContext context) {
-          return DefaultErrorPage(
-            message: '404 请求的页不存在：${settings.name}',
-          );
+          return DefaultErrorPage();
         });
   }
 
@@ -139,29 +213,22 @@ class Framework implements IServiceProvider {
     if (welcome.lastIndexOf("://") < 0) {
       throw '500 Welcome Not a Full Path.';
     }
-    await runZoned<Future<Null>>(() async {
+    try {
       await _init(
         welcome: welcome,
       );
-
-      await _runApp(
-        onAfterRun: onAfterRun,
-        onBeforeRun: onBeforeRun,
-        welcome: welcome,
-        taskbarTitle: taskbarTitle,
-      );
-    }, onError: (error, stackTrace) async {//它能拦截到启动app之前的错误
-      print(error.toString());
-      int pos=welcome.indexOf("://");
-      String appname=welcome.substring(0,pos);
-      runApp(ErrorPortal(
-        taskbarTitle: appname,
-        themeData: ThemeData.light(),
-        errorPage: DefaultErrorPage(
-          message: '${error.toString()}',
-        ),
-      ));
-    });
+    } catch (e, stack) {
+      FlutterErrorDetails details =
+          FlutterErrorDetails(exception: e, stack: stack);
+      FlutterError.reportError(details);
+      _beforeErrorState = BeforeErrorState(exception: e, stackTrace: stack);
+    }
+    await _runApp(
+      onAfterRun: onAfterRun,
+      onBeforeRun: onBeforeRun,
+      welcome: welcome,
+      taskbarTitle: taskbarTitle,
+    );
 
     return this;
   }
@@ -192,15 +259,24 @@ class Framework implements IServiceProvider {
     onBeforeRun(Widget app),
     onAfterRun(Widget app),
   }) async {
-    ThemeData themeData = _loadThemeData(welcome);
-    //启动app
-    NetosApp netosApp = NetosApp(
-      taskbarTitle: taskbarTitle,
-      welcome: welcome,
-      framework: this,
-      themeData: themeData,
-      errorPage: errorPage==null?DefaultErrorPage():errorPage,
-    );
+    NetosApp netosApp = null;
+    if (_beforeErrorState == null) {
+      ThemeData themeData = _loadThemeData(welcome);
+      //启动app
+      netosApp = NetosApp(
+        taskbarTitle: taskbarTitle,
+        welcome: welcome,
+        framework: this,
+        themeData: themeData,
+      );
+    } else {
+      //启动app
+      netosApp = NetosApp(
+        taskbarTitle: taskbarTitle,
+        welcome: welcome,
+        framework: this,
+      );
+    }
     this._parent = netosApp;
     if (onBeforeRun != null) {
       onBeforeRun(netosApp);
@@ -230,6 +306,4 @@ class Framework implements IServiceProvider {
     var styleinfo = _systemDir.getStyleInfo(name, version, style);
     return MyThemeData.parseStyle(styleinfo);
   }
-
-
 }

@@ -27,11 +27,7 @@ class _LoginDisplayState extends State<LoginDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    var display = widget.context.displayInfo;
-    var page = widget.context.pageInfo;
-    var portal = widget.context.portal;
-    var portalInfo = portal.getInfo();
-    var style = portal.getUseStyle();
+    var dctx = widget.context;
     return Scaffold(
 //      resizeToAvoidBottomPadding: false,
       body: SafeArea(
@@ -44,7 +40,7 @@ class _LoginDisplayState extends State<LoginDisplay> {
 //                Image.asset('packages/shrine_images/diamond.png'),
                 const SizedBox(height: 16.0),
                 Text(
-                  'SHRINE',
+                  '金证时代',
                   style: Theme.of(context).textTheme.headline,
                 ),
               ],
@@ -55,7 +51,7 @@ class _LoginDisplayState extends State<LoginDisplay> {
               child: TextField(
                 controller: _usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Username',
+                  labelText: '用户名',
                 ),
               ),
             ),
@@ -65,7 +61,7 @@ class _LoginDisplayState extends State<LoginDisplay> {
               child: TextField(
                 controller: _passwordController,
                 decoration: const InputDecoration(
-                  labelText: 'Password',
+                  labelText: '密码',
                 ),
               ),
             ),
@@ -74,28 +70,72 @@ class _LoginDisplayState extends State<LoginDisplay> {
                 ButtonBar(
                   children: <Widget>[
                     FlatButton(
-                      child: const Text('CANCEL'),
+                      child: const Text('重置'),
                       shape: const BeveledRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(7.0)),
                       ),
                       onPressed: () {
-                        // The login screen is immediately displayed on top of
-                        // the Shrine home screen using onGenerateRoute and so
-                        // rootNavigator must be set to true in order to get out
-                        // of Shrine completely.
-                        //Navigator.of(context, rootNavigator: true).pop();
+                        _passwordController.text = '';
+                        _usernameController.text = '';
                       },
                     ),
                     RaisedButton(
-                      child: const Text('NEXT'),
+                      child: const Text('登录'),
                       elevation: 8.0,
                       shape: const BeveledRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(7.0)),
                       ),
                       onPressed: () {
-                        // Navigator.pop(context);
-                        widget.context.forward("gbera://home2.page");
+                        //widget.context.forward("gbera://home2.page");
 //                      Navigator.of(context).pushNamed('/error.page');
+                        var pwd = _passwordController.text;
+                        var user = _usernameController.text;
+                        int pos=user.lastIndexOf("@");
+                        var account='';
+                        var tanant='';
+                        if(pos<0){
+                          account=user;
+                        }else{
+                          account=user.substring(0,pos);
+                          tanant=user.substring(pos+1,user.length);
+                        }
+                        if ((user.length == 11 || user.length == 12) &&
+                            (user.startsWith("1") || user.startsWith("01"))) {
+                          dctx.restfull(
+                            'authenticate',
+                            parameters: {
+                              "authName": "auth.phone",
+                              "tenant": tanant,
+                              "principals": account,
+                              "password": pwd,
+                              "ttlMillis": "31536000000000",
+                            },
+                            onsucceed: (response) {
+
+                            },
+                            onerror: (e) {
+
+                            },
+                          );
+                        } else {
+                          dctx.restfull(
+                            'authenticate',
+                            parameters: {
+                              "authName": "auth.password",
+                              "tenant": tanant,
+                              "principals": account,
+                              "password": pwd,
+                              "ttlMillis": "31536000000000",
+                            },
+                            onsucceed: (response) {
+                              print('$response');
+                              widget.context.forward("gbera://home.page");
+                            },
+                            onerror: (e) {
+                              print('......$e');
+                            },
+                          );
+                        }
                       },
                     ),
                   ],
