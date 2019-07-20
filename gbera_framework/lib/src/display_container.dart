@@ -30,7 +30,7 @@ class DisplayContainer implements IDisplayContainer {
       throw '404 框架没有发现 $portal';
     }
     ISystemDir systemDir=parent.getService('@systemDir');
-    var portalInfo = systemDir.getPortalInfo(pageInfo);
+    var portalInfo = systemDir.getPortal(pageInfo);
     Map<String, DisplayGetter> displayGetters = binder(portalInfo);
     _displayGetters[portal] = displayGetters;
 

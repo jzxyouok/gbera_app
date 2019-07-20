@@ -7,7 +7,7 @@ import 'display_context.dart';
 typedef RouteElementGetter = Widget Function(BuildContext context);
 typedef DisplayGetter = Widget Function(DisplayContext context);
 typedef DisplayBinder = Map<String, DisplayGetter> Function(
-  IPortalInfo portalInfo,
+  IPortal portalInfo,
 );
 
 typedef OnFrameworkInit = Future Function(
@@ -23,21 +23,24 @@ mixin ISystemDir {
   PageInfo getPageInfo({
     String pagePath,
   });
+  bool isInstalledApp(String appname);
+  emptySystemDir();
 
   Map<String, Object> getAppInfo(String microapp);
-  IPortalInfo getPortalInfo(PageInfo pageInfo);
-  Future init();
 
+  IPortal getPortal(PageInfo pageInfo);
+
+  Map<String, Object> getPortalInfo(name, version);
+
+  Map<String, Object> getStyleInfo(name, version, style);
+
+  Future init();
 }
 
 mixin IAppInstaller {
   Future init();
 
   Future installApp(String appname);
-
-  bool isInstalledApp(String appname);
-
-  String getInstalledAppVersion(String appname);
 }
 
 mixin IDisplayContainer {
@@ -45,9 +48,10 @@ mixin IDisplayContainer {
 
   void addBinder(String theme, displays);
 }
-mixin IPortalInfo {
-  Map<String,Object> getInfo();
-  Map<String,Object> getUseStyle();
+mixin IPortal {
+  Map<String, Object> getInfo();
+
+  Map<String, Object> getUseStyle();
 }
 
 class PageInfo {
@@ -68,4 +72,41 @@ class PageInfo {
     this.micrositeToken,
     this.url,
   });
+}
+
+class Portal implements IPortal {
+  String name;
+  String version;
+  String useStyle;
+  var getStyleInfo;
+  var getPortalInfo;
+
+  IServiceProvider _site;
+
+  Portal({
+    IServiceProvider site,
+    this.name,
+    this.version,
+    this.useStyle,
+    this.getStyleInfo,
+    this.getPortalInfo,
+  }) {
+    _site = site;
+  }
+
+  @override
+  Map<String, Object> getUseStyle() {
+    if (getStyleInfo != null) {
+      return getStyleInfo(name, version, useStyle);
+    }
+    return null;
+  }
+
+  @override
+  Map<String, Object> getInfo() {
+    if (getPortalInfo != null) {
+      return getPortalInfo(name, version);
+    }
+    return null;
+  }
 }

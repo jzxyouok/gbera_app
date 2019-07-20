@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gbera_framework/framework.dart';
 
 class LoginDisplay extends StatefulWidget {
-
-  LoginDisplay({Key key, this.title,this.context}) : super(key: key);
+  LoginDisplay({Key key, this.title, this.context}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -25,9 +24,14 @@ class LoginDisplay extends StatefulWidget {
 class _LoginDisplayState extends State<LoginDisplay> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-
+    var display = widget.context.displayInfo;
+    var page = widget.context.pageInfo;
+    var portal = widget.context.portal;
+    var portalInfo = portal.getInfo();
+    var style = portal.getUseStyle();
     return Scaffold(
 //      resizeToAvoidBottomPadding: false,
       body: SafeArea(
@@ -89,7 +93,9 @@ class _LoginDisplayState extends State<LoginDisplay> {
                         borderRadius: BorderRadius.all(Radius.circular(7.0)),
                       ),
                       onPressed: () {
-                       // Navigator.pop(context);
+                        // Navigator.pop(context);
+                        widget.context.forward("gbera://home2.page");
+//                      Navigator.of(context).pushNamed('/error.page');
                       },
                     ),
                   ],
@@ -102,8 +108,10 @@ class _LoginDisplayState extends State<LoginDisplay> {
     );
   }
 }
+
 class PrimaryColorOverride extends StatelessWidget {
-  const PrimaryColorOverride({Key key, this.color, this.child}) : super(key: key);
+  const PrimaryColorOverride({Key key, this.color, this.child})
+      : super(key: key);
 
   final Color color;
   final Widget child;

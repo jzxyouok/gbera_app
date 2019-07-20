@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
+import '../util.dart';
 import 'i_service.dart';
 
 class SystemDir implements ISystemDir {
@@ -42,23 +43,23 @@ class SystemDir implements ISystemDir {
     String page = path.substring(pos + 2, path.length);
 
     Map<String, Object> app = getAppInfo(microapp);
-    if (app == null) {
+    if (app == null||app.isEmpty) {
       throw ('404 未发现应用。$microapp');
     }
     Map<String, Object> pages = app['pages'];
-    if (pages == null) {
-      throw ('404 应用中没有配置页。$microapp');
+    if (pages == null||pages.isEmpty) {
+      throw ('404 应用中没有页配置。$microapp');
     }
     Map<String, Object> pageProps = pages[page];
-    if (pageProps == null) {
-      throw ('404 配置页中缺少属性配置。$pagePath');
+    if (pageProps == null||pageProps.isEmpty) {
+      throw ('404 页不存在。$pagePath');
     }
     String display = pageProps['display'];
     Map<String, Object> microsite = pageProps['microsite'];
-    if (microsite == null) {
+    if (microsite == null||microsite.isEmpty) {
       microsite = app['microsite'];
     }
-    if (microsite == null) {
+    if (microsite == null||microsite.isEmpty) {
       throw '404 缺少microsite配置。$pagePath';
     }
     String micrositeHost = microsite['host'];
@@ -74,23 +75,37 @@ class SystemDir implements ISystemDir {
       url: page,
     );
   }
-
-  IPortalInfo getPortalInfo(PageInfo pageInfo) {
+  @override
+  IPortal getPortal(PageInfo pageInfo) {
     String portal = pageInfo.portal;
     int pos = portal.indexOf("/");
     String name = portal.substring(0, pos);
     String version = portal.substring(pos + 1, portal.length);
-    return PortalInfo(
+    return Portal(
       site: parent,
       name: name,
       version: version,
       useStyle: pageInfo.style,
-      getPortalInfo: _getPortalInfo,
-      getStyleInfo: _getStyleInfo,
+      getPortalInfo: getPortalInfo,
+      getStyleInfo: getStyleInfo,
     );
   }
 
-  Map<String, Object> _getPortalInfo(name, version) {
+  @override
+  bool isInstalledApp(String appname) {
+    var dir = Directory("$_homeDir/apps/$appname");
+    if (!dir.existsSync()) {
+      return false;
+    }
+    File f = File("${dir.path}/app.json");
+    if (!f.existsSync()) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  Map<String, Object> getPortalInfo(name, version) {
     var dir = Directory("$_homeDir/portals/$name");
     if (!dir.existsSync()) {
       dir.createSync(recursive: true);
@@ -102,49 +117,23 @@ class SystemDir implements ISystemDir {
     String text = f.readAsStringSync();
     return json.decode(text);
   }
-
-  Map<String, Object> _getStyleInfo(name, version, useStyle) {
-    Map<String, Object> info = _getPortalInfo(name, version);
+  @override
+  Map<String, Object> getStyleInfo(name, version, style) {
+    Map<String, Object> info = getPortalInfo(name, version);
     if (info == null) return null;
-    String useStyle = info['useStyle'];
+    String useStyle = style;
+    if(StringUtil.isEmpty(useStyle)){
+      useStyle=info['useStyle'];
+    }
     Map<String, Object> styles = info['styles'];
     return styles[useStyle];
   }
+  @override
+  emptySystemDir(){
+    var dir = Directory("$_homeDir");
+    if (dir.existsSync()) {
+      dir.deleteSync(recursive: true);
+    }
+  }
 }
 
-class PortalInfo implements IPortalInfo {
-  String name;
-  String version;
-  String useStyle;
-  var getStyleInfo;
-  var getPortalInfo;
-
-  IServiceProvider _site;
-
-  PortalInfo({
-    IServiceProvider site,
-    this.name,
-    this.version,
-    this.useStyle,
-    this.getStyleInfo,
-    this.getPortalInfo,
-  }){
-    _site=site;
-  }
-
-  @override
-  Map<String, Object> getUseStyle() {
-    if (getStyleInfo != null) {
-      return getStyleInfo(name, version, useStyle);
-    }
-    return null;
-  }
-
-  @override
-  Map<String, Object> getInfo() {
-    if (getPortalInfo != null) {
-     return getPortalInfo(name, version);
-    }
-    return null;
-  }
-}

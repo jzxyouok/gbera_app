@@ -1,13 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class DefaultErrorPage extends StatelessWidget {
-  final String message;
+import '../util.dart';
 
-  const DefaultErrorPage(this.message);
+class ErrorPortal extends StatelessWidget {
+  Widget errorPage;
+  String taskbarTitle;
+  ThemeData themeData;
+
+  ErrorPortal({this.errorPage, this.taskbarTitle, this.themeData});
 
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      title:taskbarTitle ,
+      theme: themeData,
+      home: errorPage,
+    );
+  }
+}
+
+class DefaultErrorPage extends StatelessWidget {
+  final String message;
+
+  const DefaultErrorPage({this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    String msg=message;
+    if(StringUtil.isEmpty(msg)){
+      Object obj=ModalRoute.of(context).settings.arguments;
+      if(obj!=null&&(obj is FlutterErrorDetails)){
+       msg= obj.exceptionAsString();
+      }
+    }
+    if(msg==null){
+      msg='';
+    }
     return Scaffold(
       body: Center(
         child: Padding(
@@ -25,7 +54,7 @@ class DefaultErrorPage extends StatelessWidget {
                 ),
               ),
               Text(
-                message,
+                msg,
                 style: TextStyle(
                   color: Colors.red,
                 ),

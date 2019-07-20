@@ -4,16 +4,23 @@ import 'i_service.dart';
 
 class DisplayContext {
   BuildContext _context;
-  Map<String,Object> _displayInfo;
   PageInfo _pageInfo;
-  IPortalInfo _portalInfo;
+  IPortal _portal;
   IServiceProvider site;
+
 //  Map<String, DisplayMethod> _methods;
 //  Map<String, DisplayProperty> _properties;
 
   PageInfo get pageInfo => _pageInfo;
 
-  IPortalInfo get portalInfo => _portalInfo;
+  IPortal get portal => _portal;
+
+  Map<String, Object> get displayInfo {
+    Map<String, Object> portal = _portal.getInfo();
+    Map<String, Object> displays = portal['displays'];
+    var _displayInfo = displays[_pageInfo.display];
+    return _displayInfo;
+  }
 
   DisplayContext({
     this.site,
@@ -21,12 +28,9 @@ class DisplayContext {
     PageInfo pageInfo,
   }) {
     ISystemDir _systemDir = site.getService("@systemDir");
-    this._portalInfo = _systemDir.getPortalInfo(pageInfo);
+    this._portal = _systemDir.getPortal(pageInfo);
     this._pageInfo = pageInfo;
     this._context = context;
-    Map<String,Object> portal=_portalInfo.getInfo();
-    Map<String,Object> displays=portal['displays'];
-    _displayInfo=displays[_pageInfo.display];
   }
 
   String path() {

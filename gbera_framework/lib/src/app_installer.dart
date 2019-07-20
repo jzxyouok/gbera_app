@@ -24,19 +24,13 @@ class AppInstaller implements IAppInstaller {
   }
 
   @override
-  installApp(String appname) async {
+  Future installApp(String appname) async {
     var app = await _findApp(appname);
     var portal = await _findPortal(app['portal']);
     //覆盖安装，一个app只安装一个（谁见过手机端装一个应用的多个版的？所以微应用也是这样）
     await _saveApp(app);
     await _savePortal(portal);
   }
-
-  @override
-  String getInstalledAppVersion(String appname) {}
-
-  @override
-  bool isInstalledApp(String appname) {}
 
   _findApp(String appname) async {
     Dio http = site.getService("@http");

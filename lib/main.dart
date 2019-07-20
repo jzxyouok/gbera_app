@@ -1,5 +1,6 @@
 library gbera;
 
+import 'package:flutter/widgets.dart';
 import 'package:gbera_app/src/login_display.dart';
 import 'package:gbera_framework/framework.dart';
 
@@ -9,9 +10,15 @@ import 'package:gbera_app/src/backdrop_display.dart';
 //面向微主题开发，向framework注册微主题
 
 void main() async {
+  ErrorWidget.builder = (FlutterErrorDetails flutterErrorDetails){
+    print(flutterErrorDetails.toString());
+    return Center(
+      child: Text("Flutter 走神了"),
+    );
+  };
   await Framework(
+    isEmptySystemDir: true,
     remoteMicroappHost: 'http://localhost:7800',
-    clearCaches: true,
     remoteMicroappToken: 'xxxx',
     bindPortals: (framework) {
       framework.portalBinder(
