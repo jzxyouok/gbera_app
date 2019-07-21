@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../framework.dart';
 import '../util.dart';
 
 class MyThemeData {
-  static ThemeData parseStyle(Map<String, Object> styleInfo) {
-    Map<String, Object> theme = styleInfo['theme'];
+  static ThemeData parseStyle(MicroStyleInfo styleInfo) {
+    Map<String, Object> theme = styleInfo.theme;
     if (theme == null) return null;
 
     getColorByHex(String styleItem, String text) {

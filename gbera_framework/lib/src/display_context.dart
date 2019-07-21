@@ -18,9 +18,9 @@ class DisplayContext {
 
   IPortal get portal => _portal;
 
-  Map<String, Object> get displayInfo {
-    Map<String, Object> portal = _portal.getInfo();
-    Map<String, Object> displays = portal['displays'];
+  MicroDisplayInfo get displayInfo {
+    var portal = _portal.getInfo();
+    var displays = portal.displays;
     var _displayInfo = displays[_pageInfo.display];
     return _displayInfo;
   }
@@ -53,14 +53,16 @@ class DisplayContext {
     Map<String, Object> parameters, //有的自动放入内容，有一自动放入参数，有的自动放入头
     onsucceed,
     onerror,
+    void Function(int, int) onReceiveProgress,
+    void Function(int, int) onSendProgress,
   }) async {
-    Map<String, Object> _methods = displayInfo['methods'];
+    var _methods = displayInfo.methods;
     if (!_methods.containsKey(methodName)) {
       throw '404 方法在显示器中未有定义';
     }
-    Map<String, Object> _method = _methods[methodName];
-    var cmd = _method['command'];
-    Map<String, Object> _defparameters = _method['parameters'];
+    var _method = _methods[methodName];
+    var cmd = _method.command;
+   var _defparameters = _method.parameters;
 
     Map<String, String> _parameters = Map();
     Map<String, String> _headers = Map();
@@ -70,8 +72,8 @@ class DisplayContext {
       if (!_defparameters.containsKey(key)) {
         throw '未定义参数:在方法:$methodName.$key';
       }
-      Map<String, Object> _p = _defparameters[key];
-      switch (_p['in-request']) {
+     var _p = _defparameters[key];
+      switch (_p.inRequest) {
         case 'header':
           _headers[key] = '$v';
           break;
@@ -88,25 +90,22 @@ class DisplayContext {
           throw '参数定义错误。参数仅能放到请求的header|parameter|content。$methodName.$key';
       }
     });
-    Map<String, Object> restHeader = _method['rest-header'];
-    if (restHeader != null) {
-      restHeader.forEach((key, v) {
-        _headers[key] = '$v';
-      });
-    }
-    _headers['micrositeToken'] = pageInfo.micrositeToken;
+    var restHeader = _method.restHeader;
+    _headers['Rest-Command']=restHeader?.command;
+    _headers['Rest-StubFace']=restHeader?.stubFace;
+    _headers['micrositeToken'] = pageInfo.microsite?.token;
     Options options = Options(headers: _headers);
 
     Dio dio = site.getService('@http');
 
     switch (cmd) {
       case 'get':
-        var host = this.pageInfo.micrositeHost;
+        var host = this.pageInfo.microsite?.host;
         Response response = await dio
             .get(
           host,
           queryParameters: _parameters,
-          onReceiveProgress: (i, j) {},
+          onReceiveProgress: onReceiveProgress,
           options: options,
         )
             .catchError(
@@ -120,12 +119,12 @@ class DisplayContext {
             FlutterError.reportError(details);
           },
         );
-        if (onsucceed != null&&response!=null) {
+        if (onsucceed != null && response != null) {
           onsucceed(response);
         }
         break;
       case 'post':
-        var host = this.pageInfo.micrositeHost;
+        var host = this.pageInfo.microsite?.host;
         options.headers['Content-Type'] =
             'application/x-www-form-urlencoded; charset=UTF-8';
         Response response = await dio
@@ -133,8 +132,8 @@ class DisplayContext {
           host,
           data: json.encode(_contents),
           queryParameters: _parameters,
-          onReceiveProgress: (i, j) {},
-          onSendProgress: (i, j) {},
+          onReceiveProgress: onReceiveProgress,
+          onSendProgress: onSendProgress,
           options: options,
         )
             .catchError(
@@ -148,7 +147,7 @@ class DisplayContext {
             FlutterError.reportError(details);
           },
         );
-        if (onsucceed != null&&response!=null) {
+        if (onsucceed != null && response != null) {
           onsucceed(response);
         }
         break;

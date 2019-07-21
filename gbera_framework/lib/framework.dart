@@ -152,9 +152,9 @@ class Framework implements IServiceProvider {
           Widget _errorPage;
           String microapp =
               settings.name.substring(0, settings.name.indexOf("://"));
-          Map<String, Object> appinfo = _systemDir.getAppInfo(microapp);
+          var appinfo = _systemDir.getAppInfo(microapp);
           if (appinfo != null) {
-            String errorConfPage = appinfo['error'];
+            String errorConfPage = appinfo.error;
             if (!StringUtil.isEmpty(errorConfPage)) {
               try {
                 PageInfo pageInfo = _systemDir.getPageInfo(
@@ -294,14 +294,14 @@ class Framework implements IServiceProvider {
     if (appinfo == null) {
       throw '404 应用不存在：$microapp';
     }
-    String portal = appinfo['portal'];
+    String portal = appinfo.portal;
     pos = portal.indexOf("/");
     String name = portal.substring(0, pos);
     String version = portal.substring(pos + 1, portal.length);
-    String style = appinfo['style'];
+    String style = appinfo.style;
     if (StringUtil.isEmpty(style)) {
       var portalinfo = _systemDir.getPortalInfo(name, version);
-      style = portalinfo['useStyle'];
+      style = portalinfo.useStyle;
     }
     var styleinfo = _systemDir.getStyleInfo(name, version, style);
     return MyThemeData.parseStyle(styleinfo);

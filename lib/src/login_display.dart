@@ -28,6 +28,12 @@ class _LoginDisplayState extends State<LoginDisplay> {
   @override
   Widget build(BuildContext context) {
     var dctx = widget.context;
+    var s=dctx.portal;
+    var b=dctx.site;
+    var e=dctx.displayInfo;
+    var f=dctx.pageInfo;
+    var l=s.getUseStyle();
+    var m=s.getInfo();
     return Scaffold(
 //      resizeToAvoidBottomPadding: false,
       body: SafeArea(
@@ -88,54 +94,10 @@ class _LoginDisplayState extends State<LoginDisplay> {
                       onPressed: () {
                         //widget.context.forward("gbera://home2.page");
 //                      Navigator.of(context).pushNamed('/error.page');
-                        var pwd = _passwordController.text;
-                        var user = _usernameController.text;
-                        int pos=user.lastIndexOf("@");
-                        var account='';
-                        var tanant='';
-                        if(pos<0){
-                          account=user;
-                        }else{
-                          account=user.substring(0,pos);
-                          tanant=user.substring(pos+1,user.length);
-                        }
-                        if ((user.length == 11 || user.length == 12) &&
-                            (user.startsWith("1") || user.startsWith("01"))) {
-                          dctx.restfull(
-                            'authenticate',
-                            parameters: {
-                              "authName": "auth.phone",
-                              "tenant": tanant,
-                              "principals": account,
-                              "password": pwd,
-                              "ttlMillis": "31536000000000",
-                            },
-                            onsucceed: (response) {
-
-                            },
-                            onerror: (e) {
-
-                            },
-                          );
-                        } else {
-                          dctx.restfull(
-                            'authenticate',
-                            parameters: {
-                              "authName": "auth.password",
-                              "tenant": tanant,
-                              "principals": account,
-                              "password": pwd,
-                              "ttlMillis": "31536000000000",
-                            },
-                            onsucceed: (response) {
-                              print('$response');
-                              widget.context.forward("gbera://home.page");
-                            },
-                            onerror: (e) {
-                              print('......$e');
-                            },
-                          );
-                        }
+                        LoginAction loginAction = LoginAction(
+                            context: dctx,
+                            user: _usernameController.text,
+                            pwd: _passwordController.text,).login();
                       },
                     ),
                   ],
@@ -162,5 +124,75 @@ class PrimaryColorOverride extends StatelessWidget {
       child: child,
       data: Theme.of(context).copyWith(primaryColor: color),
     );
+  }
+}
+
+class LoginAction {
+  final String user;
+  final String pwd;
+  final DisplayContext context;
+
+  const LoginAction({this.user, this.pwd, this.context});
+
+  login() {
+    int pos = user.lastIndexOf("@");
+    var account = '';
+    var tenant = '';
+    if (pos < 0) {
+      account = user;
+    } else {
+      account = user.substring(0, pos);
+      tenant = user.substring(pos + 1, user.length);
+    }
+    if ((user.length == 11 || user.length == 12) &&
+        (user.startsWith("1") || user.startsWith("01"))) {
+      context.restfull(
+        'authenticate',
+        parameters: {
+          "authName": "auth.phone",
+          "tenant": tenant,
+          "principals": account,
+          "password": pwd,
+          "ttlMillis": "31536000000000",
+        },
+        onsucceed: (response) {
+          forwardOK(response);
+        },
+        onerror: (e) {
+          forwardError(e);
+        },
+        onReceiveProgress: (i,j){
+
+        },
+      );
+    } else {
+      context.restfull(
+        'authenticate',
+        parameters: {
+          "authName": "auth.password",
+          "tenant": tenant,
+          "principals": account,
+          "password": pwd,
+          "ttlMillis": "31536000000000",
+        },
+        onsucceed: (response) {
+          forwardOK(response);
+        },
+        onerror: (e) {
+          forwardError(e);
+        },
+        onReceiveProgress: (i,j){
+          print('$i-$j');
+        },
+      );
+    }
+  }
+
+  void forwardOK(response) {
+    context.forward("gbera://home.page");
+  }
+
+  void forwardError(e) {
+    context.forward("gbera://public/error.page",arguments: {"error":'$e'});
   }
 }

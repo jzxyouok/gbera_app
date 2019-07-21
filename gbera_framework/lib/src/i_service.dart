@@ -23,16 +23,18 @@ mixin ISystemDir {
   PageInfo getPageInfo({
     String pagePath,
   });
+
   bool isInstalledApp(String appname);
+
   emptySystemDir();
 
-  Map<String, Object> getAppInfo(String microapp);
+  MicroAppInfo getAppInfo(String microapp);
 
   IPortal getPortal(PageInfo pageInfo);
 
-  Map<String, Object> getPortalInfo(name, version);
+  MicroPortalInfo getPortalInfo(name, version);
 
-  Map<String, Object> getStyleInfo(name, version, style);
+  MicroStyleInfo getStyleInfo(name, version, style);
 
   Future init();
 }
@@ -49,9 +51,9 @@ mixin IDisplayContainer {
   void addBinder(String theme, displays);
 }
 mixin IPortal {
-  Map<String, Object> getInfo();
+  MicroPortalInfo getInfo();
 
-  Map<String, Object> getUseStyle();
+  MicroStyleInfo getUseStyle();
 }
 
 class PageInfo {
@@ -59,17 +61,15 @@ class PageInfo {
   String display;
   String portal;
   String style;
-  String micrositeHost;
-  String micrositeToken;
+  MicroSite microsite;
   String url;
 
   PageInfo({
     this.app,
     this.display,
     this.portal,
+    this.microsite,
     this.style,
-    this.micrositeHost,
-    this.micrositeToken,
     this.url,
   });
 }
@@ -78,8 +78,8 @@ class Portal implements IPortal {
   String name;
   String version;
   String useStyle;
-  var getStyleInfo;
-  var getPortalInfo;
+  MicroStyleInfo Function(String, String, String) getStyleInfo;
+  MicroPortalInfo Function(String, String) getPortalInfo;
 
   IServiceProvider _site;
 
@@ -95,7 +95,7 @@ class Portal implements IPortal {
   }
 
   @override
-  Map<String, Object> getUseStyle() {
+  MicroStyleInfo getUseStyle() {
     if (getStyleInfo != null) {
       return getStyleInfo(name, version, useStyle);
     }
@@ -103,10 +103,161 @@ class Portal implements IPortal {
   }
 
   @override
-  Map<String, Object> getInfo() {
+  MicroPortalInfo getInfo() {
     if (getPortalInfo != null) {
       return getPortalInfo(name, version);
     }
     return null;
+  }
+}
+
+class MicroAppInfo {
+  final String name;
+  final String title;
+  final String desc;
+  final String developer;
+  final String version;
+  final String portal;
+  final String style;
+  final String home;
+  final String error;
+  final MicroSite microsite;
+  Map<String, MicroDisplayPage> pages;
+
+  MicroAppInfo({
+    this.name,
+    this.title,
+    this.desc,
+    this.developer,
+    this.version,
+    this.portal,
+    this.style,
+    this.home,
+    this.error,
+    this.microsite,
+  }) {
+    pages = Map();
+  }
+}
+
+class MicroDisplayPage {
+  final String display;
+  final MicroSite microsite;
+
+  const MicroDisplayPage({this.display, this.microsite});
+}
+
+class MicroSite {
+  final String host;
+  final String token;
+
+  const MicroSite({this.host, this.token});
+}
+
+class MicroPortalInfo {
+  final String name;
+  final String version;
+  final String title;
+  final String desc;
+  final String ctime;
+  final String useStyle;
+  final String developer;
+  Map<String, dynamic> plugin;
+  Map<String, MicroDisplayInfo> displays;
+  Map<String, MicroStyleInfo> styles;
+
+  MicroPortalInfo({
+    this.name,
+    this.version,
+    this.title,
+    this.desc,
+    this.ctime,
+    this.useStyle,
+    this.developer,
+  }) {
+    styles = Map();
+    displays = Map();
+    plugin = Map();
+  }
+}
+
+class MicroDisplayInfo {
+  String name;
+  Map<String, MicroDisplayMethod> methods;
+  Map<String, MicroDisplayProperty> properties;
+
+  MicroDisplayInfo({this.name}) {
+    methods = Map();
+    properties = Map();
+  }
+}
+
+class MicroDisplayProperty {
+  final String name;
+  final String type;
+  final String usage;
+
+  MicroDisplayProperty({this.name, this.type, this.usage});
+}
+
+class MicroDisplayMethod {
+  String name;
+  String command;
+  String protocol;
+  String usage;
+  String returnType;
+  MicroDisplayMethodRestHeader restHeader;
+  Map<String, MicroDisplayMethodParameter> parameters;
+
+  MicroDisplayMethod({
+    this.name,
+    this.command,
+    this.protocol,
+    this.usage,
+    this.returnType,
+    this.restHeader,
+  }) {
+    parameters = Map();
+  }
+}
+
+class MicroDisplayMethodParameter {
+  final String name;
+  final String type;
+  final String usage;
+  final String inRequest;
+
+  const MicroDisplayMethodParameter(
+      {this.name, this.type, this.usage, this.inRequest});
+}
+
+class MicroDisplayMethodRestHeader {
+  final String stubFace;
+  final String command;
+
+  const MicroDisplayMethodRestHeader({
+    this.stubFace,
+    this.command,
+  });
+}
+
+class MicroStyleInfo {
+  final String name;
+  final String title;
+  final String desc;
+  Map<String, Object> assets;
+  Map<String, Object> colors;
+  List<Object> fonts; //key是family名
+  Map<String, Object> theme;
+
+  MicroStyleInfo({
+    this.name,
+    this.title,
+    this.desc,
+  }) {
+    assets = Map();
+    colors = Map();
+    fonts = List();
+    theme = Map();
   }
 }
