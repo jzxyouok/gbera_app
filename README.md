@@ -11,7 +11,15 @@
 ''' 基于以上选型了flutter，目前及未来，移动端的开发flutter肯定能主导天下，就目前从易开发性和性能来看也是如此。
 
 ## 依赖：
+
 - 推荐后台微服务采用gateway2开发，不推荐使用spring boot，当然，netos框架支持任何web容器提供的服务，只是我认为采用网关2开发后端非常简单而且是基于netty的nio并发性更好。
+- mongodb
+- netdisk 网盘工具
+用于微应用的存储配置，从下面连接中下载：cmdtools/disk目录
+'see: https://github.com/carocean/cj.studio.netdisk/
+- 微应用服务中心
+'see: https://github.com/carocean/cj.netos.gbera
+将上面项目中的documents/gbera目录下的文件通过netdisk工具上传至netos网盘gbera存储方案下的文件系统根目录下，如果不知道如何使用netdisk工具，请使用man命令
 
 ## 架构：
 三种开发者角色：
