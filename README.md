@@ -21,7 +21,7 @@
 
 在此架构之前可以再演进出类似于零开发的企业号功能，每个第三方均可尝试去做，让你的微应用也可像微信一样为你的第三方开放内容api，因此本架构是一个比微信平台更高层级的移动端系统。
 
-![架构图](https://github.com/carocean/gbera_app/tree/master/documents/netos.app-v1.3.png)
+![架构图](https://github.com/carocean/gbera_app/blob/master/documents/netos.app-v1.3.png)
 
 ## Getting Started
 
