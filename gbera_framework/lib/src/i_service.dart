@@ -206,8 +206,8 @@ class MicroDisplayMethod {
   String protocol;
   String usage;
   String returnType;
-  MicroDisplayMethodRestHeader restHeader;
   Map<String, MicroDisplayMethodParameter> parameters;
+  MicroDisplayTokenInfo tokenInfo;
 
   MicroDisplayMethod({
     this.name,
@@ -215,10 +215,17 @@ class MicroDisplayMethod {
     this.protocol,
     this.usage,
     this.returnType,
-    this.restHeader,
+    this.tokenInfo,
   }) {
     parameters = Map();
   }
+}
+
+class MicroDisplayTokenInfo {
+  String name;
+  String inrequest;
+
+  MicroDisplayTokenInfo(this.name, this.inrequest);
 }
 
 class MicroDisplayMethodParameter {
@@ -229,16 +236,6 @@ class MicroDisplayMethodParameter {
 
   const MicroDisplayMethodParameter(
       {this.name, this.type, this.usage, this.inRequest});
-}
-
-class MicroDisplayMethodRestHeader {
-  final String stubFace;
-  final String command;
-
-  const MicroDisplayMethodRestHeader({
-    this.stubFace,
-    this.command,
-  });
 }
 
 class MicroStyleInfo {
@@ -259,5 +256,24 @@ class MicroStyleInfo {
     colors = Map();
     fonts = List();
     theme = Map();
+  }
+}
+
+class OpenportsException implements Exception {
+  String message;
+  int state;
+  String cause;
+
+  OpenportsException({
+    this.message,
+    this.state,
+    this.cause,
+  });
+
+  @override
+  String toString() {
+    return "Openports [$state]: " +
+        (message ?? "") +'\r\n'+
+        (cause ?? "");
   }
 }

@@ -72,7 +72,7 @@ class Framework implements IServiceProvider {
   @override
   getService(String name) {
     if ("@remote.searcher" == name) {
-      return '${this._remoteMicroappHost}/microapp/searcher.service';
+      return '${this._remoteMicroappHost}/gberaSearcher.ports';
     }
     if ('@http' == name) {
       return _dio;
@@ -82,6 +82,9 @@ class Framework implements IServiceProvider {
     }
     if ('@systemDir' == name) {
       return _systemDir;
+    }
+    if('@remoteMicroappToken'==name){
+      return _remoteMicroappToken;
     }
     return _parent ?? _parent.getService(name);
   }

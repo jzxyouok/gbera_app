@@ -9,13 +9,13 @@ import 'package:gbera_app/src/backdrop_display.dart';
 import 'src/error_display.dart';
 
 //flutter中的dart不支持动态反射实例化类型
-//面向微主题开发，向framework注册微主题
+//面向微框架开发，向framework注册微框架
 
 void main() async {
 
   await Framework(
     isEmptySystemDir: true,
-    remoteMicroappHost: 'http://localhost:7800',
+    remoteMicroappHost: 'http://localhost:6700/openport',
     remoteMicroappToken: 'xxxx',
     errorPage: DefaultErrorPage(),
     bindPortals: (framework) {

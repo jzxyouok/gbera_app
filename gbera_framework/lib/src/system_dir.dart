@@ -171,7 +171,7 @@ class SystemDir implements ISystemDir {
         );
         style.assets = mstyle['assets'];
         style.colors = mstyle['colors'];
-        style.fonts=mstyle['fonts'];
+        style.fonts = mstyle['fonts'];
         style.theme = mstyle['theme'];
         info.styles[styleName] = style;
       });
@@ -197,17 +197,17 @@ class SystemDir implements ISystemDir {
         if (mmethods != null) {
           mmethods.forEach((methodName, methodV) {
             Map<String, Object> mMethodInfo = methodV;
-            Map<String, Object> mrestHeader = mMethodInfo['rest-header'];
+            Map<String, Object> mtoken = mMethodInfo['token'];
             var method = MicroDisplayMethod(
               name: methodName,
               usage: mMethodInfo['usage'],
               command: mMethodInfo['command'],
-              restHeader: MicroDisplayMethodRestHeader(
-                command: mrestHeader['Rest-Command'],
-                stubFace: mrestHeader['Rest-StubFace'],
-              ),
               returnType: mMethodInfo['return-type'],
               protocol: mMethodInfo['protocol'],
+              tokenInfo: MicroDisplayTokenInfo(
+                mtoken['name']??mtoken['name'],
+                mtoken['in-request']??mtoken['in-request'],
+              ),
             );
             Map<String, Object> mparameters = mMethodInfo['parameters'];
             if (mparameters != null) {
@@ -228,7 +228,7 @@ class SystemDir implements ISystemDir {
         info.displays[displayName] = display;
       });
     }
-    info.plugin=map['plugin'];
+    info.plugin = map['plugin'];
     return info;
   }
 

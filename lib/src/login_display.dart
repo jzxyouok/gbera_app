@@ -146,7 +146,7 @@ class LoginAction {
     }
     if ((user.length == 11 || user.length == 12) &&
         (user.startsWith("1") || user.startsWith("01"))) {
-      context.restfull(
+      context.call(
         'authenticate',
         parameters: {
           "authName": "auth.phone",
@@ -155,10 +155,10 @@ class LoginAction {
           "password": pwd,
           "ttlMillis": "31536000000000",
         },
-        onsucceed: (response) {
+        onsucceed: (data,response) {
           forwardOK(response);
         },
-        onerror: (e) {
+        onerror: (e,stack) {
           forwardError(e);
         },
         onReceiveProgress: (i,j){
@@ -166,7 +166,7 @@ class LoginAction {
         },
       );
     } else {
-      context.restfull(
+      context.call(
         'authenticate',
         parameters: {
           "authName": "auth.password",
@@ -175,10 +175,10 @@ class LoginAction {
           "password": pwd,
           "ttlMillis": "31536000000000",
         },
-        onsucceed: (response) {
-          forwardOK(response);
+        onsucceed: (data,response) {
+          forwardOK(data);
         },
-        onerror: (e) {
+        onerror: (e,stack) {
           forwardError(e);
         },
         onReceiveProgress: (i,j){
@@ -188,7 +188,7 @@ class LoginAction {
     }
   }
 
-  void forwardOK(response) {
+  void forwardOK(data) {
     context.forward("gbera://home.page");
   }
 

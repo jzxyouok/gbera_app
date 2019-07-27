@@ -36,9 +36,10 @@ class AppInstaller implements IAppInstaller {
     Dio http = site.getService("@http");
     try {
       String remote = site.getService("@remote.searcher");
+      String remoteMicroappToken = site.getService('@remoteMicroappToken');
       Options options = Options(headers: {
-        'Rest-StubFace': 'cj.netos.microapp.stub.IGberaSearcher',
-        'Rest-Command': 'getMicroAppInfo'
+        'Rest-Command': 'getMicroAppInfo',
+        'cjtoken':remoteMicroappToken
       });
       Response response = await http.get(
         remote,
@@ -46,7 +47,11 @@ class AppInstaller implements IAppInstaller {
         options: options,
       );
       String text = response.data.toString();
-      var app = json.decode(text);
+      Map<String,Object> rc = json.decode(text);
+      if(rc['status']!=200){
+        throw Future.error('访问微应用服务器出错');
+      }
+      var app=json.decode(rc['dataText']);
       return app;
     } catch (e) {
       throw e;
@@ -57,9 +62,10 @@ class AppInstaller implements IAppInstaller {
     Dio http = site.getService("@http");
     try {
       String remote = site.getService("@remote.searcher");
+      String remoteMicroappToken = site.getService('@remoteMicroappToken');
       Options options = Options(headers: {
-        'Rest-StubFace': 'cj.netos.microapp.stub.IGberaSearcher',
-        'Rest-Command': 'getMicroPortalInfo'
+        'Rest-Command': 'getMicroPortalInfo',
+        'cjtoken':remoteMicroappToken
       });
       Response response = await http.get(
         remote,
@@ -67,8 +73,12 @@ class AppInstaller implements IAppInstaller {
         options: options,
       );
       String text = response.data.toString();
-      var app = json.decode(text);
-      return app;
+      Map<String,Object> rc = json.decode(text);
+      if(rc['status']!=200){
+        throw Future.error('访问微应用服务器出错');
+      }
+      var portalInfo = json.decode(rc['dataText']);
+      return portalInfo;
     } catch (e) {
       throw e;
     }
